@@ -1,0 +1,85 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "format:{calendar_resource}-EXCEPTION-{#}",
+ "creation": "2026-01-20 21:24:01.669900",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "calendar_resource",
+  "exception_type",
+  "date",
+  "start_time",
+  "end_time",
+  "reason"
+ ],
+ "fields": [
+  {
+   "description": "Agenda a la que aplica la excepci\u00f3n",
+   "fieldname": "calendar_resource",
+   "fieldtype": "Link",
+   "label": "Calendar Resource",
+   "options": "Calendar Resource"
+  },
+  {
+   "default": "Blocked",
+   "description": "Tipo de bloqueo o cierre",
+   "fieldname": "exception_type",
+   "fieldtype": "Select",
+   "label": "Exception Type",
+   "options": "Closed\nBlocked\nExtra Availability"
+  },
+  {
+   "description": "D\u00eda afectado. Ej: 2026-01-10",
+   "fieldname": "date",
+   "fieldtype": "Date",
+   "label": "Date"
+  },
+  {
+   "description": "Inicio del bloqueo parcial",
+   "fieldname": "start_time",
+   "fieldtype": "Time",
+   "label": "Start Time"
+  },
+  {
+   "description": "Fin del bloqueo parcial",
+   "fieldname": "end_time",
+   "fieldtype": "Time",
+   "label": "End Time"
+  },
+  {
+   "description": "Motivo del bloqueo. Ej: Junta m\u00e9dica",
+   "fieldname": "reason",
+   "fieldtype": "Small Text",
+   "label": "Reason"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-01-20 21:28:53.191830",
+ "modified_by": "Administrator",
+ "module": "Meet Scheduling",
+ "name": "Calendar Exception",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

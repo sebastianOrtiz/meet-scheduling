@@ -1,0 +1,112 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "field:account_name",
+ "creation": "2026-01-08 14:44:36.060102",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "account_name",
+  "provider",
+  "owner_user",
+  "status",
+  "auth_mode",
+  "access_token",
+  "refresh_token",
+  "token_expires_at",
+  "scopes"
+ ],
+ "fields": [
+  {
+   "description": "Nombre amigable de la cuenta. Ej: Google - Consultas Dr. G\u00f3mez",
+   "fieldname": "account_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Account Name",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "default": "google_meet",
+   "description": "Proveedor de videollamada. Ej: google_meet\n",
+   "fieldname": "provider",
+   "fieldtype": "Select",
+   "label": "Provider",
+   "options": "google_meet\nmicrosoft_teams"
+  },
+  {
+   "description": "Usuario que autoriz\u00f3 la cuenta. Ej: andrea@empresa.com",
+   "fieldname": "owner_user",
+   "fieldtype": "Link",
+   "label": "Owner User",
+   "options": "User"
+  },
+  {
+   "default": "Connected",
+   "description": "Estado de la conexi\u00f3n. Ej: Connected\n",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "Connected\nExpired\nRevoked"
+  },
+  {
+   "default": "oauth_user",
+   "fieldname": "auth_mode",
+   "fieldtype": "Select",
+   "label": "Auth Mode",
+   "options": "oauth_user\nservice_account\nmanual_link"
+  },
+  {
+   "description": "Token de acceso API. Ej: ya29.a0AfH6\u2026\n",
+   "fieldname": "access_token",
+   "fieldtype": "Password",
+   "label": "Access Token"
+  },
+  {
+   "description": "Token para renovar acceso. Ej: 1//0gL8k\u2026\n",
+   "fieldname": "refresh_token",
+   "fieldtype": "Password",
+   "label": "Refresh Token"
+  },
+  {
+   "description": "Fecha de expiraci\u00f3n. Ej: 2026-01-08 15:30\n",
+   "fieldname": "token_expires_at",
+   "fieldtype": "Datetime",
+   "label": "Token Expires At"
+  },
+  {
+   "description": "Permisos otorgados. Ej: calendar.events\n",
+   "fieldname": "scopes",
+   "fieldtype": "Small Text",
+   "label": "Scopes"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-01-08 16:40:42.772995",
+ "modified_by": "Administrator",
+ "module": "Meet Scheduling",
+ "name": "Provider Account",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

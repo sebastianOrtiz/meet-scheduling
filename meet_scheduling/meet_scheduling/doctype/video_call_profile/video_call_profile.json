@@ -1,0 +1,160 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "field:profile_name",
+ "creation": "2026-01-20 20:04:21.715055",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "profile_name",
+  "is_active",
+  "provider",
+  "link_mode",
+  "require_manual_if_auto_fails",
+  "provider_account",
+  "generation_mode",
+  "meeting_title_template",
+  "meeting_description_template",
+  "manual_url_instructions",
+  "default_duration_minutes",
+  "create_on",
+  "timezone_mode",
+  "extra_options_json",
+  "fallback_profile"
+ ],
+ "fields": [
+  {
+   "description": "Nombre del perfil. Ej: Meet - Consultas (Auto)\n",
+   "fieldname": "profile_name",
+   "fieldtype": "Data",
+   "label": "Profile Name",
+   "unique": 1
+  },
+  {
+   "default": "1",
+   "description": "Indica si el perfil puede usarse\n",
+   "fieldname": "is_active",
+   "fieldtype": "Check",
+   "label": "Is Active"
+  },
+  {
+   "default": "google_meet",
+   "description": "Proveedor del perfil\n",
+   "fieldname": "provider",
+   "fieldtype": "Select",
+   "label": "Provider",
+   "options": "google_meet\nmicrosoft_teams"
+  },
+  {
+   "default": "auto_generate",
+   "description": "Define si el enlace se genera o se pega\n",
+   "fieldname": "link_mode",
+   "fieldtype": "Select",
+   "label": "Link Mode",
+   "options": "auto_generate\nmanual_only\nauto_or_manual"
+  },
+  {
+   "default": "0",
+   "description": "Permitir pegar link si falla OAuth\n",
+   "fieldname": "require_manual_if_auto_fails",
+   "fieldtype": "Check",
+   "label": "Require Manual if Auto Fails"
+  },
+  {
+   "description": "Cuenta usada para generar el enlace\n",
+   "fieldname": "provider_account",
+   "fieldtype": "Link",
+   "label": "Provider Account",
+   "options": "Provider Account"
+  },
+  {
+   "default": "api_create_meeting",
+   "description": "M\u00e9todo t\u00e9cnico de creaci\u00f3n\n",
+   "fieldname": "generation_mode",
+   "fieldtype": "Select",
+   "label": "Generation Mode",
+   "options": "api_create_meeting\nstatic_template"
+  },
+  {
+   "description": "Plantilla t\u00edtulo. Ej: Consulta - {{ party_name }}\n",
+   "fieldname": "meeting_title_template",
+   "fieldtype": "Data",
+   "label": "Meeting Title Template"
+  },
+  {
+   "description": "Plantilla descripci\u00f3n\n",
+   "fieldname": "meeting_description_template",
+   "fieldtype": "Text",
+   "label": "Meeting Description Template"
+  },
+  {
+   "description": "Instrucciones cuando es manual\n",
+   "fieldname": "manual_url_instructions",
+   "fieldtype": "Text",
+   "label": "Manual URL Instructions"
+  },
+  {
+   "default": "60",
+   "description": "Duraci\u00f3n por defecto\n",
+   "fieldname": "default_duration_minutes",
+   "fieldtype": "Int",
+   "label": "Default Duration (Minutes)"
+  },
+  {
+   "default": "on_submit",
+   "description": "Momento de creaci\u00f3n del enlace\n",
+   "fieldname": "create_on",
+   "fieldtype": "Select",
+   "label": "Create On",
+   "options": "on_submit\non_confirm\nmanual"
+  },
+  {
+   "default": "calendar_timezone",
+   "description": "Zona horaria usada\n",
+   "fieldname": "timezone_mode",
+   "fieldtype": "Select",
+   "label": "Timezone Mode",
+   "options": "calendar_timezone\nsystem_timezone"
+  },
+  {
+   "description": "Flags avanzados del proveedor\n",
+   "fieldname": "extra_options_json",
+   "fieldtype": "JSON",
+   "label": "Extra Options (JSON)"
+  },
+  {
+   "fieldname": "fallback_profile",
+   "fieldtype": "Link",
+   "label": "Fallback Profile",
+   "options": "Video Call Profile"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-01-20 21:08:02.104827",
+ "modified_by": "Administrator",
+ "module": "Meet Scheduling",
+ "name": "Video Call Profile",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

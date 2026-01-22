@@ -148,6 +148,15 @@ app_license = "mit"
 # Scheduled Tasks
 # ---------------
 
+scheduler_events = {
+	"cron": {
+		"*/15 * * * *": [  # Cada 15 minutos
+			"meet_scheduling.meet_scheduling.scheduling.tasks.cleanup_expired_drafts"
+		]
+	}
+}
+
+# Otros scheduled tasks (comentados por ahora)
 # scheduler_events = {
 # 	"all": [
 # 		"meet_scheduling.tasks.all"

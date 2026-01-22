@@ -1,0 +1,232 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "format:APT-{YYYY}-{#####}",
+ "creation": "2026-01-20 21:30:32.420551",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "datos_base_section",
+  "calendar_resource",
+  "start_datetime",
+  "end_datetime",
+  "status",
+  "draft_expires_at",
+  "party_type",
+  "party",
+  "service",
+  "notes",
+  "source",
+  "enlace_de_llamada_section",
+  "video_call_profile",
+  "call_link_mode",
+  "manual_meeting_url",
+  "manual_meeting_notes",
+  "resultado_final_section",
+  "meeting_url",
+  "video_provider",
+  "meeting_id",
+  "meeting_status",
+  "meeting_error",
+  "provider_payload",
+  "meeting_created_at",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "datos_base_section",
+   "fieldtype": "Section Break",
+   "label": "Datos base"
+  },
+  {
+   "description": "Agenda donde se reserva",
+   "fieldname": "calendar_resource",
+   "fieldtype": "Link",
+   "label": "Calendar Resource",
+   "options": "Calendar Resource"
+  },
+  {
+   "description": "Hora de inicio. Ej: 2026-01-15 09:00",
+   "fieldname": "start_datetime",
+   "fieldtype": "Datetime",
+   "label": "Start Datetime"
+  },
+  {
+   "description": "Hora de fin. Ej: 2026-01-15 09:30",
+   "fieldname": "end_datetime",
+   "fieldtype": "Datetime",
+   "label": "End Datetime"
+  },
+  {
+   "default": "Draft",
+   "description": "Estado actual de la cita",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "Draft\nConfirmed\nCancelled\nNo-show\nCompleted"
+  },
+  {
+   "description": "Momento en que este Draft expira y libera el horario",
+   "fieldname": "draft_expires_at",
+   "fieldtype": "Datetime",
+   "hidden": 1,
+   "label": "Draft Expires At",
+   "read_only": 1
+  },
+  {
+   "description": "Tipo de entidad atendida. Ej: Customer",
+   "fieldname": "party_type",
+   "fieldtype": "Link",
+   "label": "Party Type",
+   "options": "DocType"
+  },
+  {
+   "description": "Cliente espec\u00edfico. Ej: CUST-000123",
+   "fieldname": "party",
+   "fieldtype": "Dynamic Link",
+   "label": "Party",
+   "options": "party_type"
+  },
+  {
+   "description": "Servicio agendado. Ej: Consulta General",
+   "fieldname": "service",
+   "fieldtype": "Data",
+   "label": "Service"
+  },
+  {
+   "description": "Observaciones adicionales",
+   "fieldname": "notes",
+   "fieldtype": "Text",
+   "label": "Notes"
+  },
+  {
+   "default": "Web",
+   "description": "Canal de creaci\u00f3n",
+   "fieldname": "source",
+   "fieldtype": "Select",
+   "label": "Source",
+   "options": "Web\nAdmin\nAPI"
+  },
+  {
+   "fieldname": "enlace_de_llamada_section",
+   "fieldtype": "Section Break",
+   "label": "Enlace de llamada"
+  },
+  {
+   "description": "Perfil aplicado a la cita",
+   "fieldname": "video_call_profile",
+   "fieldtype": "Link",
+   "label": "Video Call Profile",
+   "options": "Video Call Profile"
+  },
+  {
+   "default": "inherit",
+   "description": "C\u00f3mo se resuelve el enlace",
+   "fieldname": "call_link_mode",
+   "fieldtype": "Select",
+   "label": "Call Link Mode",
+   "options": "inherit\nmanual\nauto"
+  },
+  {
+   "description": "Enlace pegado manualmente",
+   "fieldname": "manual_meeting_url",
+   "fieldtype": "Small Text",
+   "label": "Manual Meeting URL"
+  },
+  {
+   "description": "Nota sobre el enlace manual",
+   "fieldname": "manual_meeting_notes",
+   "fieldtype": "Small Text",
+   "label": "Manual Meeting Notes"
+  },
+  {
+   "fieldname": "resultado_final_section",
+   "fieldtype": "Section Break",
+   "label": "Resultado final"
+  },
+  {
+   "description": "Enlace final que usan los participantes",
+   "fieldname": "meeting_url",
+   "fieldtype": "Small Text",
+   "label": "Meeting URL"
+  },
+  {
+   "description": "Proveedor efectivo usado",
+   "fieldname": "video_provider",
+   "fieldtype": "Select",
+   "label": "Video Provider",
+   "options": "google_meet\nmicrosoft_teams"
+  },
+  {
+   "description": "ID externo para editar/cancelar",
+   "fieldname": "meeting_id",
+   "fieldtype": "Data",
+   "label": "Meeting ID"
+  },
+  {
+   "default": "not_created",
+   "description": "Resultado de la creaci\u00f3n",
+   "fieldname": "meeting_status",
+   "fieldtype": "Select",
+   "label": "Meeting Status",
+   "options": "not_created\ncreated\nfailed"
+  },
+  {
+   "description": "Mensaje de error si fall\u00f3",
+   "fieldname": "meeting_error",
+   "fieldtype": "Small Text",
+   "label": "Meeting Error"
+  },
+  {
+   "description": "Respuesta cruda del proveedor",
+   "fieldname": "provider_payload",
+   "fieldtype": "JSON",
+   "label": "Provider Payload"
+  },
+  {
+   "description": "Momento en que se cre\u00f3 el enlace",
+   "fieldname": "meeting_created_at",
+   "fieldtype": "Datetime",
+   "label": "Meeting Created At"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Appointment",
+   "print_hide": 1,
+   "read_only": 1,
+   "search_index": 1
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2026-01-21 10:45:44.910600",
+ "modified_by": "Administrator",
+ "module": "Meet Scheduling",
+ "name": "Appointment",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
