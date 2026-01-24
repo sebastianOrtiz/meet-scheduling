@@ -26,23 +26,30 @@ from meet_scheduling.meet_scheduling.video_calls.base import VideoCallError
 class Appointment(Document):
 	"""
 	Appointment DocType with scheduling validation and video call integration.
+
+	Flujo:
+	1. Usuario crea Draft -> se bloquea el slot por X minutos (draft_expires_at)
+	2. Si no confirma a tiempo, el Draft expira y se cancela automáticamente
+	3. Al confirmar (submit), se valida disponibilidad y se crea meeting si aplica
 	"""
 
 	def validate(self) -> None:
 		"""
-		Validación básica antes de guardar.
+		Validación antes de guardar.
 
 		Ejecuta:
-		1. Validar consistencia de fechas
-		2. Resolver video_call_profile si está vacío
-		3. Calcular draft_expires_at si es Draft
-		4. Validar overlaps con warnings (no bloquea)
-		5. Validar slot granularity (opcional)
+		1. Validar calendar_resource requerido
+		2. Validar consistencia de fechas
+		3. Resolver video_call_profile si está vacío
+		4. Calcular draft_expires_at si es Draft nuevo
+		5. Bloquear si capacity excedida (Draft bloquea slot)
+		6. Validar slot granularity (warning)
 		"""
+		self._validate_calendar_resource()
 		self._validate_datetime_consistency()
 		self._resolve_video_call_profile()
 		self._calculate_draft_expiration()
-		self._validate_overlaps_with_warnings()
+		self._validate_overlaps_and_block_if_exceeded()
 		self._validate_slot_granularity()
 
 	def on_submit(self) -> None:
@@ -50,11 +57,13 @@ class Appointment(Document):
 		Validación fuerte y creación de meeting al confirmar.
 
 		Ejecuta:
-		1. Validación fuerte de disponibilidad
-		2. Validación fuerte de overlaps (bloquea si capacity exceeded)
-		3. Crear meeting si corresponde (auto)
-		4. Validar manual_meeting_url si es manual
+		1. Verificar que el Draft no haya expirado
+		2. Validación fuerte de disponibilidad
+		3. Validación fuerte de overlaps (bloquea si capacity exceeded)
+		4. Crear meeting si corresponde (auto)
+		5. Validar manual_meeting_url si es manual
 		"""
+		self._validate_draft_not_expired()
 		self._validate_availability_strict()
 		self._validate_overlaps_strict()
 		self._handle_meeting_creation()
@@ -85,6 +94,11 @@ class Appointment(Document):
 
 	# ===== VALIDATION METHODS =====
 
+	def _validate_calendar_resource(self) -> None:
+		"""Valida que calendar_resource esté presente."""
+		if not self.calendar_resource:
+			frappe.throw(_("Calendar Resource es requerido"))
+
 	def _validate_datetime_consistency(self) -> None:
 		"""Valida que start_datetime < end_datetime."""
 		if not self.start_datetime or not self.end_datetime:
@@ -107,10 +121,12 @@ class Appointment(Document):
 
 	def _calculate_draft_expiration(self) -> None:
 		"""
-		Calcula draft_expires_at si status = Draft.
+		Calcula draft_expires_at si status = Draft y es nuevo.
 
 		Usa draft_expiration_minutes del Calendar Resource (default: 15 min).
+		El Draft bloquea el slot hasta que expire o se confirme.
 		"""
+		# Solo calcular si es Draft y no tiene fecha de expiración
 		if self.status == "Draft" and not self.draft_expires_at:
 			resource = frappe.get_doc("Calendar Resource", self.calendar_resource)
 			expiration_minutes = resource.draft_expiration_minutes or 15
@@ -121,11 +137,18 @@ class Appointment(Document):
 				as_datetime=True
 			)
 
-	def _validate_overlaps_with_warnings(self) -> None:
-		"""
-		Valida overlaps con warnings (Decisión 1: validar desde Draft).
+			frappe.msgprint(
+				_(f"Este slot está reservado por {expiration_minutes} minutos. Confirme antes de que expire."),
+				indicator="blue",
+				alert=True
+			)
 
-		No bloquea el save, solo muestra mensajes informativos.
+	def _validate_overlaps_and_block_if_exceeded(self) -> None:
+		"""
+		Valida overlaps y BLOQUEA si la capacidad está excedida.
+
+		Los Drafts activos (no expirados) bloquean slots para otros usuarios.
+		Esto evita que dos usuarios reserven el mismo horario simultáneamente.
 		"""
 		if not self.calendar_resource or not self.start_datetime or not self.end_datetime:
 			return
@@ -137,24 +160,25 @@ class Appointment(Document):
 			exclude_appointment=self.name if not self.is_new() else None
 		)
 
-		if overlap_result["has_overlap"]:
+		# Si hay overlap pero no excede capacidad, solo informar
+		if overlap_result["has_overlap"] and not overlap_result["capacity_exceeded"]:
 			overlapping = ", ".join(overlap_result["overlapping_appointments"])
 			frappe.msgprint(
-				_(f"Este horario tiene {overlap_result['capacity_used']} appointments: {overlapping}"),
-				indicator="orange",
+				_(f"Este horario tiene {overlap_result['capacity_used']} cita(s) existente(s). Capacidad disponible: {overlap_result['capacity_available']}"),
+				indicator="blue",
 				alert=True
 			)
 
+		# Si la capacidad está excedida, BLOQUEAR
 		if overlap_result["capacity_exceeded"]:
-			frappe.msgprint(
-				_(f"⚠️ Capacidad excedida ({overlap_result['capacity_used']}/{overlap_result['capacity_used']})"),
-				indicator="orange",
-				alert=True
+			overlapping = ", ".join(overlap_result["overlapping_appointments"])
+			frappe.throw(
+				_(f"No hay capacidad disponible en este horario. Ya hay {overlap_result['capacity_used']} cita(s) que ocupan toda la capacidad.")
 			)
 
 	def _validate_slot_granularity(self) -> None:
 		"""
-		Valida que la duración respete slot_duration_minutes (Decisión 4).
+		Valida que la duración respete slot_duration_minutes.
 
 		Permite override pero muestra warning.
 		"""
@@ -170,9 +194,33 @@ class Appointment(Document):
 
 		if duration_minutes % slot_duration != 0:
 			frappe.msgprint(
-				_(f"⚠️ La duración ({duration_minutes} min) no es múltiplo de slot_duration ({slot_duration} min)"),
+				_(f"La duración ({int(duration_minutes)} min) no es múltiplo de la duración del slot ({slot_duration} min)"),
 				indicator="yellow",
 				alert=True
+			)
+
+	def _validate_draft_not_expired(self) -> None:
+		"""
+		Valida que el Draft no haya expirado antes de confirmar.
+
+		Si el Draft expiró, el usuario debe crear una nueva cita.
+		"""
+		if self.status != "Draft":
+			return
+
+		if not self.draft_expires_at:
+			return
+
+		expires_at = get_datetime(self.draft_expires_at)
+		current_time = now_datetime()
+
+		if expires_at < current_time:
+			# Calcular hace cuánto expiró
+			expired_ago = current_time - expires_at
+			minutes_ago = int(expired_ago.total_seconds() / 60)
+
+			frappe.throw(
+				_(f"Esta reserva expiró hace {minutes_ago} minuto(s). El slot ha sido liberado. Por favor, cree una nueva cita si el horario sigue disponible.")
 			)
 
 	def _validate_availability_strict(self) -> None:
@@ -250,7 +298,7 @@ class Appointment(Document):
 		if overlap_result["capacity_exceeded"]:
 			overlapping = ", ".join(overlap_result["overlapping_appointments"])
 			frappe.throw(
-				_(f"Capacidad excedida. Ya hay {overlap_result['capacity_used']} appointments: {overlapping}")
+				_(f"Capacidad excedida. Ya hay {overlap_result['capacity_used']} cita(s) en este horario.")
 			)
 
 	# ===== VIDEO CALL METHODS =====
@@ -333,8 +381,6 @@ class Appointment(Document):
 
 			adapter.delete_meeting(profile, self)
 
-			# Note: meeting_status remains "created" - the appointment status field shows cancellation
-
 			frappe.msgprint(
 				_("Meeting cancelado en el proveedor"),
 				indicator="orange",
@@ -347,7 +393,7 @@ class Appointment(Document):
 
 	def _handle_meeting_update_on_time_change(self) -> None:
 		"""
-		Re-crea meeting automático si cambió el horario (Decisión 3).
+		Re-crea meeting automático si cambió el horario.
 
 		Solo aplica a appointments Confirmed con meetings auto-generados.
 		"""
@@ -394,7 +440,7 @@ class Appointment(Document):
 			except Exception as e:
 				frappe.log_error(f"Error updating meeting: {str(e)}", "Appointment Meeting Update")
 				frappe.msgprint(
-					_(f"⚠️ Error al actualizar meeting: {str(e)}"),
+					_(f"Error al actualizar meeting: {str(e)}"),
 					indicator="orange",
 					alert=True
 				)

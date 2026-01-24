@@ -8,6 +8,7 @@
  "field_order": [
   "datos_base_section",
   "calendar_resource",
+  "user_contact",
   "start_datetime",
   "end_datetime",
   "status",
@@ -198,13 +199,20 @@
    "print_hide": 1,
    "read_only": 1,
    "search_index": 1
+  },
+  {
+   "description": "Usuario que agenda la reunion",
+   "fieldname": "user_contact",
+   "fieldtype": "Link",
+   "label": "User contact",
+   "options": "User contact"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-01-21 10:45:44.910600",
+ "modified": "2026-01-23 21:02:41.924874",
  "modified_by": "Administrator",
  "module": "Meet Scheduling",
  "name": "Appointment",

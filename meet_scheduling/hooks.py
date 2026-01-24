@@ -5,10 +5,26 @@ app_description = "Aplicacion para configurar disopniblidad y agendamiento de ci
 app_email = "sebastianortiz989@gmail.com"
 app_license = "mit"
 
+# Fixtures
+# ------------------
+# Fixtures are automatically exported/imported when running bench migrate
+# These register the meet_scheduling tool in Service Portal
+
+fixtures = [
+    {
+        "doctype": "Tool Type",
+        "filters": [["app_name", "=", "meet_scheduling"]]
+    },
+    {
+        "doctype": "Custom Field",
+        "filters": [["dt", "=", "Service Portal Tool"], ["fieldname", "=", "calendar_resource"]]
+    }
+]
+
 # Apps
 # ------------------
 
-# required_apps = []
+required_apps = ["common_configurations"]
 
 # Each item in the list will be shown as an app in the apps page
 # add_to_apps_screen = [

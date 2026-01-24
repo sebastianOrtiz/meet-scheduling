@@ -385,12 +385,58 @@ Está listo cuando:
 
 ⸻
 
-16) Recomendación para trabajar con Claude (para tu equipo)
+16) Bloqueo de Slots con Drafts (Implementación actual)
+
+El sistema implementa bloqueo de slots mediante Drafts con expiración:
+
+16.1 Flujo de bloqueo:
+	1.	Usuario crea Draft → se calcula draft_expires_at (default: 15 minutos)
+	2.	El Draft bloquea el slot para otros usuarios (cuenta como ocupado en capacity)
+	3.	Si intenta crear otro Draft en el mismo horario y no hay capacidad → ERROR
+	4.	Si el usuario no confirma a tiempo:
+		a.	Al intentar submit: ERROR "Esta reserva expiró hace X minutos"
+		b.	Task automático (cada 15 min): marca Drafts expirados como Cancelled
+
+16.2 Validaciones en validate():
+	•	calendar_resource requerido
+	•	start_datetime < end_datetime
+	•	Si capacity excedida → BLOQUEAR (no solo warning)
+	•	Calcular draft_expires_at si es Draft nuevo
+
+16.3 Validaciones en on_submit():
+	•	Verificar que Draft no haya expirado
+	•	Validar disponibilidad según plan
+	•	Validar overlaps estricto
+	•	Crear meeting si corresponde
+
+16.4 Task de limpieza (cron cada 15 min):
+	•	Busca Drafts con draft_expires_at < now()
+	•	Los marca como Cancelled automáticamente
+	•	Agrega comment explicativo
+
+⸻
+
+17) Integración con Service Portal
+
+17.1 Campos relevantes:
+	•	user_contact (Link → User Contact): Usuario que agenda la reunión
+	•	calendar_resource: Recurso del portal configurado
+
+17.2 Flujo desde Service Portal:
+	1.	Frontend obtiene portal configuration
+	2.	Si request_contact_user_data = true → crea User Contact
+	3.	Obtiene slots disponibles: GET get_available_slots(calendar_resource, from, to)
+	4.	Crea Appointment en Draft con user_contact = User Contact creado
+	5.	Usuario confirma → submit Appointment
+
+⸻
+
+18) Recomendación para trabajar con Claude (para tu equipo)
 
 Cuando vayas a pedirle a Claude que escriba código, pásale:
 	•	Este documento
 	•	Los nombres exactos de tus DocTypes y fieldnames
 	•	Tu decisión sobre:
-	•	¿validar overlaps en Draft o solo al Confirmar?
-	•	¿Submit vs Confirmed? (si no usas submit, usa un workflow)
-	•	¿actualizar meeting si cambia hora o recrear?
+	•	¿validar overlaps en Draft o solo al Confirmar? → IMPLEMENTADO: bloquea en Draft
+	•	¿Submit vs Confirmed? → Usa submit, status cambia a Confirmed
+	•	¿actualizar meeting si cambia hora o recrear? → Re-crear meeting

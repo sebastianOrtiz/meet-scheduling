@@ -1,0 +1,12 @@
+[
+    {
+        "doctype": "Tool Type",
+        "name": "meet_scheduling",
+        "tool_name": "meet_scheduling",
+        "tool_label": "Agendamiento de Citas",
+        "app_name": "meet_scheduling",
+        "icon": "calendar",
+        "description": "Permite agendar citas según disponibilidad de Calendar Resources",
+        "is_active": 1
+    }
+]

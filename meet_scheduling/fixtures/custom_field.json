@@ -1,0 +1,15 @@
+[
+    {
+        "doctype": "Custom Field",
+        "name": "Service Portal Tool-calendar_resource",
+        "dt": "Service Portal Tool",
+        "fieldname": "calendar_resource",
+        "fieldtype": "Link",
+        "options": "Calendar Resource",
+        "label": "Calendar Resource",
+        "insert_after": "tool_type",
+        "depends_on": "eval:doc.tool_type=='meet_scheduling'",
+        "mandatory_depends_on": "eval:doc.tool_type=='meet_scheduling'",
+        "description": "Recurso de calendario para obtener disponibilidad"
+    }
+]
