@@ -12,6 +12,10 @@ app_license = "mit"
 
 fixtures = [
     {
+        "doctype": "Role",
+        "filters": [["name", "in", ["Meet Scheduling Manager", "Appointment User"]]]
+    },
+    {
         "doctype": "Tool Type",
         "filters": [["app_name", "=", "meet_scheduling"]]
     },

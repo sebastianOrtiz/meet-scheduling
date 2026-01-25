@@ -1,0 +1,18 @@
+[
+	{
+		"doctype": "Role",
+		"name": "Meet Scheduling Manager",
+		"role_name": "Meet Scheduling Manager",
+		"desk_access": 1,
+		"is_custom": 0,
+		"disabled": 0
+	},
+	{
+		"doctype": "Role",
+		"name": "Appointment User",
+		"role_name": "Appointment User",
+		"desk_access": 0,
+		"is_custom": 0,
+		"disabled": 0
+	}
+]
