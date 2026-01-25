@@ -8,7 +8,7 @@ import unittest
 import frappe
 from frappe.utils import now_datetime, add_to_date, getdate
 
-from meet_scheduling.meet_scheduling.api.appointment_api import (
+from meet_scheduling.api.appointment_api import (
 	get_available_slots,
 	validate_appointment,
 	generate_meeting
