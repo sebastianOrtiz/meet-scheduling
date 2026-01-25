@@ -8,6 +8,7 @@ import frappe
 from frappe import _
 from frappe.utils import get_datetime, getdate, now_datetime
 from typing import Dict, List, Any, Optional
+import pytz
 
 # Import scheduling services
 from meet_scheduling.meet_scheduling.scheduling.slots import generate_available_slots
@@ -165,6 +166,23 @@ def validate_appointment(
 				"overlap_info": {}
 			}
 
+		# Obtener timezone del resource para localizar los datetimes
+		resource = frappe.get_doc("Calendar Resource", calendar_resource)
+		tz_name = resource.timezone or "UTC"
+		if tz_name == "system timezone":
+			tz_name = frappe.utils.get_system_timezone()
+
+		try:
+			tz = pytz.timezone(tz_name)
+		except Exception:
+			tz = pytz.UTC
+
+		# Localizar los datetimes si son naive (sin timezone)
+		if start.tzinfo is None:
+			start = tz.localize(start)
+		if end.tzinfo is None:
+			end = tz.localize(end)
+
 		# Validar consistencia de fechas
 		if start >= end:
 			errors.append(_("Start DateTime debe ser menor que End DateTime"))
@@ -247,6 +265,172 @@ def validate_appointment(
 			"capacity_ok": False,
 			"overlap_info": {}
 		}
+
+
+@frappe.whitelist()
+def create_and_confirm_appointment(
+	calendar_resource: str,
+	user_contact: str,
+	start_datetime: str,
+	end_datetime: str
+) -> Dict[str, Any]:
+	"""
+	Crea y confirma un appointment en una sola operación.
+
+	Este endpoint:
+	1. Crea el Appointment en estado Draft
+	2. Hace submit (lo confirma)
+	3. Retorna el documento confirmado
+
+	Args:
+		calendar_resource: nombre del Calendar Resource
+		user_contact: nombre del User Contact
+		start_datetime: inicio (YYYY-MM-DD HH:MM:SS)
+		end_datetime: fin (YYYY-MM-DD HH:MM:SS)
+
+	Returns:
+		dict: Appointment confirmado
+
+	Example:
+		```javascript
+		frappe.call({
+			method: "meet_scheduling.api.appointment_api.create_and_confirm_appointment",
+			args: {
+				calendar_resource: "Sebastian Ortiz",
+				user_contact: "UC-00001",
+				start_datetime: "2026-01-20 10:00:00",
+				end_datetime: "2026-01-20 10:30:00"
+			},
+			callback: function(r) {
+				console.log("Appointment confirmado:", r.message);
+			}
+		});
+		```
+	"""
+	try:
+		# Validar que el Calendar Resource existe
+		if not frappe.db.exists("Calendar Resource", calendar_resource):
+			frappe.throw(_(f"Calendar Resource '{calendar_resource}' no existe"))
+
+		# Validar que el User Contact existe
+		if not frappe.db.exists("User contact", user_contact):
+			frappe.throw(_(f"User contact '{user_contact}' no existe"))
+
+		# Validar formato de fechas
+		try:
+			start = get_datetime(start_datetime)
+			end = get_datetime(end_datetime)
+		except Exception:
+			frappe.throw(_("Formato de fecha inválido. Use YYYY-MM-DD HH:MM:SS"))
+
+		# Validar disponibilidad
+		validation_result = validate_appointment(
+			calendar_resource,
+			start_datetime,
+			end_datetime
+		)
+
+		if not validation_result["valid"]:
+			frappe.throw(_("Appointment no válido: ") + ", ".join(validation_result["errors"]))
+
+		# Crear Appointment en Draft
+		appointment = frappe.get_doc({
+			"doctype": "Appointment",
+			"calendar_resource": calendar_resource,
+			"user_contact": user_contact,
+			"start_datetime": start_datetime,
+			"end_datetime": end_datetime,
+			"status": "Draft"
+		})
+
+		# Guardar
+		appointment.insert(ignore_permissions=True)
+
+		# Submit (confirmar)
+		appointment.submit()
+
+		frappe.db.commit()
+
+		# Retornar el documento completo
+		return appointment.as_dict()
+
+	except Exception as e:
+		frappe.log_error(f"Error in create_and_confirm_appointment: {str(e)}", "API Error")
+		frappe.throw(_(f"Error al crear appointment: {str(e)}"))
+
+
+@frappe.whitelist()
+def cancel_or_delete_appointment(appointment_name: str) -> Dict[str, Any]:
+	"""
+	Cancela o elimina un appointment según su estado.
+
+	- Si está en Draft (docstatus=0): lo elimina
+	- Si está Submitted (docstatus=1): lo cancela (docstatus=2)
+	- Si ya está cancelado: retorna error
+
+	Args:
+		appointment_name: nombre del Appointment
+
+	Returns:
+		dict: {
+			"success": bool,
+			"action": "deleted" | "cancelled",
+			"message": str
+		}
+
+	Example:
+		```javascript
+		frappe.call({
+			method: "meet_scheduling.api.appointment_api.cancel_or_delete_appointment",
+			args: {
+				appointment_name: "APT-00001"
+			},
+			callback: function(r) {
+				console.log(r.message);
+			}
+		});
+		```
+	"""
+	try:
+		# Validar que existe
+		if not frappe.db.exists("Appointment", appointment_name):
+			frappe.throw(_(f"Appointment '{appointment_name}' no existe"))
+
+		# Obtener el appointment
+		appointment = frappe.get_doc("Appointment", appointment_name)
+
+		# Determinar acción según docstatus
+		if appointment.docstatus == 0:
+			# Draft - eliminar
+			frappe.delete_doc("Appointment", appointment_name, ignore_permissions=True)
+			frappe.db.commit()
+			return {
+				"success": True,
+				"action": "deleted",
+				"message": _("Appointment eliminado exitosamente")
+			}
+		elif appointment.docstatus == 1:
+			# Submitted - cancelar
+			appointment.cancel()
+			frappe.db.commit()
+			return {
+				"success": True,
+				"action": "cancelled",
+				"message": _("Appointment cancelado exitosamente")
+			}
+		elif appointment.docstatus == 2:
+			# Ya está cancelado
+			return {
+				"success": False,
+				"action": "none",
+				"message": _("El appointment ya está cancelado")
+			}
+		else:
+			frappe.throw(_("Estado de documento inválido"))
+
+	except Exception as e:
+		frappe.log_error(f"Error in cancel_or_delete_appointment: {str(e)}", "API Error")
+		frappe.throw(_(f"Error al cancelar/eliminar appointment: {str(e)}"))
 
 
 @frappe.whitelist()

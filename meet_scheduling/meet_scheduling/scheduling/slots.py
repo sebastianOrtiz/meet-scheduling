@@ -60,43 +60,45 @@ def generate_available_slots(
 	slots = []
 
 	# 3. Para cada intervalo disponible, generar slots discretos
-	for interval in availability_intervals:
-		interval_start = interval["start"]
-		interval_end = interval["end"]
+	# availability_intervals es un dict: {"2026-01-15": [intervals], ...}
+	for date_intervals in availability_intervals.values():
+		for interval in date_intervals:
+			interval_start = interval["start"]
+			interval_end = interval["end"]
 
-		# Generar slots cada slot_duration_minutes
-		current_slot_start = interval_start
+			# Generar slots cada slot_duration_minutes
+			current_slot_start = interval_start
 
-		while current_slot_start < interval_end:
-			current_slot_end = current_slot_start + timedelta(minutes=slot_duration_minutes)
+			while current_slot_start < interval_end:
+				current_slot_end = current_slot_start + timedelta(minutes=slot_duration_minutes)
 
-			# Si el slot se pasa del intervalo, truncar
-			if current_slot_end > interval_end:
-				break
+				# Si el slot se pasa del intervalo, truncar
+				if current_slot_end > interval_end:
+					break
 
-			# 4. Verificar overlaps y capacity para este slot
-			overlap_result = check_overlap(
-				calendar_resource,
-				current_slot_start,
-				current_slot_end,
-				exclude_appointment=None
-			)
+				# 4. Verificar overlaps y capacity para este slot
+				overlap_result = check_overlap(
+					calendar_resource,
+					current_slot_start,
+					current_slot_end,
+					exclude_appointment=None
+				)
 
-			capacity_remaining = overlap_result["capacity_available"]
-			is_available = capacity_remaining > 0
+				capacity_remaining = overlap_result["capacity_available"]
+				is_available = capacity_remaining > 0
 
-			# Crear slot
-			slot = {
-				"start": current_slot_start.strftime("%Y-%m-%d %H:%M:%S"),
-				"end": current_slot_end.strftime("%Y-%m-%d %H:%M:%S"),
-				"capacity_remaining": capacity_remaining,
-				"is_available": is_available
-			}
+				# Crear slot
+				slot = {
+					"start": current_slot_start.strftime("%Y-%m-%d %H:%M:%S"),
+					"end": current_slot_end.strftime("%Y-%m-%d %H:%M:%S"),
+					"capacity_remaining": capacity_remaining,
+					"is_available": is_available
+				}
 
-			slots.append(slot)
+				slots.append(slot)
 
-			# Avanzar al siguiente slot
-			current_slot_start = current_slot_end
+				# Avanzar al siguiente slot
+				current_slot_start = current_slot_end
 
 	# 5. Retornar lista ordenada (ya están ordenados por construcción)
 	return slots
