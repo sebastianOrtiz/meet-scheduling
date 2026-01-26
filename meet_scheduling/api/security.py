@@ -3,12 +3,22 @@ Security Utilities for Public APIs
 
 Provides rate limiting, honeypot validation, and input sanitization
 for APIs that allow guest access.
+
+Token authentication functions are imported from common_configurations.
 """
 
 import re
 import frappe
 from frappe import _
 from frappe.utils import cint
+
+# Import token authentication from common_configurations
+from common_configurations.api.security import (
+    get_current_user_contact,
+    require_user_contact,
+    validate_user_contact_ownership,
+    AUTH_HEADER
+)
 
 
 # ===================

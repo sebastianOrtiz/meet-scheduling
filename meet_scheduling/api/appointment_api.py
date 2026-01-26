@@ -6,6 +6,7 @@ All public endpoints allow guest access with security protections:
 - Rate limiting by IP address
 - Honeypot validation for bot detection
 - Input sanitization
+- Token-based authentication for User Contacts
 """
 
 import frappe
@@ -31,7 +32,9 @@ from meet_scheduling.api.security import (
     validate_datetime_string,
     validate_docname,
     sanitize_string,
-    get_client_ip
+    get_client_ip,
+    get_current_user_contact,
+    validate_user_contact_ownership
 )
 
 
@@ -364,16 +367,19 @@ def create_and_confirm_appointment(
 	Crea y confirma un appointment en una sola operación.
 
 	Este endpoint:
-	1. Crea el Appointment en estado Draft
-	2. Hace submit (lo confirma)
-	3. Retorna el documento confirmado
+	1. Valida que el usuario está autenticado con un token válido
+	2. Verifica que el user_contact del token coincide con el solicitado
+	3. Crea el Appointment en estado Draft
+	4. Hace submit (lo confirma)
+	5. Retorna el documento confirmado
 
 	Rate limited: 5 requests per minute per IP (write operation).
 	Protected by honeypot field.
+	Requires valid User Contact authentication token.
 
 	Args:
 		calendar_resource: nombre del Calendar Resource
-		user_contact: nombre del User Contact
+		user_contact: nombre del User Contact (must match authenticated user)
 		start_datetime: inicio (YYYY-MM-DD HH:MM:SS)
 		end_datetime: fin (YYYY-MM-DD HH:MM:SS)
 		appointment_context: contexto adicional del appointment (opcional)
@@ -393,6 +399,9 @@ def create_and_confirm_appointment(
 				end_datetime: "2026-01-20 10:30:00",
 				appointment_context: "Consulta sobre tema legal específico"
 			},
+			headers: {
+				"X-User-Contact-Token": "your-auth-token-here"
+			},
 			callback: function(r) {
 				console.log("Appointment confirmado:", r.message);
 			}
@@ -403,6 +412,14 @@ def create_and_confirm_appointment(
 	check_honeypot(honeypot)
 	check_rate_limit("create_appointment", limit=5, seconds=60)
 
+	# Validate authentication - user must be authenticated with a valid token
+	authenticated_user_contact = get_current_user_contact()
+	if not authenticated_user_contact:
+		frappe.throw(
+			_("Authentication required. Please register or login first."),
+			frappe.AuthenticationError
+		)
+
 	# Validate and sanitize inputs
 	calendar_resource = validate_docname(calendar_resource, "calendar_resource")
 	user_contact = validate_docname(user_contact, "user_contact")
@@ -410,6 +427,13 @@ def create_and_confirm_appointment(
 	end_datetime = validate_datetime_string(end_datetime, "end_datetime")
 	if appointment_context:
 		appointment_context = sanitize_string(appointment_context, 2000)
+
+	# Verify that the authenticated user is creating an appointment for themselves
+	if authenticated_user_contact != user_contact:
+		frappe.throw(
+			_("You can only create appointments for yourself."),
+			frappe.PermissionError
+		)
 
 	try:
 		# Validar que el Calendar Resource existe
@@ -648,3 +672,323 @@ def generate_meeting(appointment_name: str) -> Dict[str, Any]:
 			"status": "Error",
 			"message": _(f"Error inesperado: {str(e)}")
 		}
+
+
+# ===================
+# User's Own Data
+# ===================
+
+@frappe.whitelist(allow_guest=True, methods=['GET'])
+def get_my_appointments(
+	status: Optional[str] = None,
+	from_date: Optional[str] = None,
+	to_date: Optional[str] = None
+) -> List[Dict[str, Any]]:
+	"""
+	Get appointments for the authenticated User Contact.
+
+	Requires valid authentication token in X-User-Contact-Token header.
+
+	Rate limited: 30 requests per minute per IP.
+
+	Args:
+		status: Filter by status (Confirmed, Completed, Cancelled, etc.)
+		from_date: Filter from date (YYYY-MM-DD)
+		to_date: Filter to date (YYYY-MM-DD)
+
+	Returns:
+		list[dict]: List of user's appointments
+
+	Example:
+		```javascript
+		frappe.call({
+			method: "meet_scheduling.api.appointment_api.get_my_appointments",
+			args: {
+				status: "Confirmed",
+				from_date: "2026-01-01"
+			},
+			headers: {
+				"X-User-Contact-Token": "your-auth-token-here"
+			},
+			callback: function(r) {
+				console.log("My appointments:", r.message);
+			}
+		});
+		```
+	"""
+	check_rate_limit("get_my_appointments", limit=30, seconds=60)
+
+	# Validate authentication
+	user_contact = get_current_user_contact()
+	if not user_contact:
+		frappe.throw(
+			_("Authentication required. Please register or login first."),
+			frappe.AuthenticationError
+		)
+
+	try:
+		# Build filters
+		filters = {"user_contact": user_contact}
+
+		if status:
+			filters["status"] = sanitize_string(status, 50)
+
+		if from_date:
+			from_date = validate_date_string(from_date, "from_date")
+			filters["start_datetime"] = [">=", from_date]
+
+		if to_date:
+			to_date = validate_date_string(to_date, "to_date")
+			# If we already have start_datetime filter, we need to handle this differently
+			if "start_datetime" in filters:
+				# Need to use a list of filters instead
+				pass  # Handle in the query below
+
+		# Get appointments
+		if from_date and to_date:
+			appointments = frappe.get_all(
+				"Appointment",
+				filters=[
+					["user_contact", "=", user_contact],
+					["start_datetime", ">=", from_date],
+					["start_datetime", "<=", f"{to_date} 23:59:59"]
+				] + ([["status", "=", status]] if status else []),
+				fields=[
+					"name",
+					"calendar_resource",
+					"start_datetime",
+					"end_datetime",
+					"status",
+					"docstatus",
+					"appointment_context",
+					"meeting_url",
+					"meeting_status",
+					"video_provider",
+					"creation",
+					"modified"
+				],
+				order_by="start_datetime desc",
+				limit=100
+			)
+		else:
+			appointments = frappe.get_all(
+				"Appointment",
+				filters=filters,
+				fields=[
+					"name",
+					"calendar_resource",
+					"start_datetime",
+					"end_datetime",
+					"status",
+					"docstatus",
+					"appointment_context",
+					"meeting_url",
+					"meeting_status",
+					"video_provider",
+					"creation",
+					"modified"
+				],
+				order_by="start_datetime desc",
+				limit=100
+			)
+
+		# Enrich with calendar resource name
+		for apt in appointments:
+			resource_name = frappe.db.get_value(
+				"Calendar Resource",
+				apt.calendar_resource,
+				"resource_name"
+			)
+			apt["calendar_resource_name"] = resource_name
+
+		return appointments
+
+	except frappe.ValidationError:
+		raise
+	except Exception as e:
+		frappe.log_error(f"Error in get_my_appointments: {str(e)}", "API Error")
+		frappe.throw(_("Error al obtener appointments"))
+
+
+@frappe.whitelist(allow_guest=True, methods=['GET'])
+def get_appointment_detail(appointment_name: str) -> Dict[str, Any]:
+	"""
+	Get detailed information about a specific appointment.
+
+	Requires valid authentication token. User can only view their own appointments.
+
+	Rate limited: 30 requests per minute per IP.
+
+	Args:
+		appointment_name: Name of the appointment
+
+	Returns:
+		dict: Appointment details
+
+	Example:
+		```javascript
+		frappe.call({
+			method: "meet_scheduling.api.appointment_api.get_appointment_detail",
+			args: {
+				appointment_name: "APT-00001"
+			},
+			headers: {
+				"X-User-Contact-Token": "your-auth-token-here"
+			},
+			callback: function(r) {
+				console.log("Appointment:", r.message);
+			}
+		});
+		```
+	"""
+	check_rate_limit("get_appointment_detail", limit=30, seconds=60)
+
+	# Validate authentication
+	user_contact = get_current_user_contact()
+	if not user_contact:
+		frappe.throw(
+			_("Authentication required. Please register or login first."),
+			frappe.AuthenticationError
+		)
+
+	# Validate input
+	appointment_name = validate_docname(appointment_name, "appointment_name")
+
+	try:
+		# Check appointment exists
+		if not frappe.db.exists("Appointment", appointment_name):
+			frappe.throw(_("Appointment not found"), frappe.DoesNotExistError)
+
+		# Validate ownership
+		validate_user_contact_ownership(user_contact, "Appointment", appointment_name)
+
+		# Get full appointment details
+		appointment = frappe.get_doc("Appointment", appointment_name)
+
+		# Get calendar resource details
+		resource = frappe.get_doc("Calendar Resource", appointment.calendar_resource)
+
+		return {
+			"name": appointment.name,
+			"calendar_resource": appointment.calendar_resource,
+			"calendar_resource_name": resource.resource_name,
+			"user_contact": appointment.user_contact,
+			"start_datetime": str(appointment.start_datetime),
+			"end_datetime": str(appointment.end_datetime),
+			"status": appointment.status,
+			"docstatus": appointment.docstatus,
+			"appointment_context": appointment.appointment_context,
+			"meeting_url": appointment.meeting_url,
+			"meeting_id": appointment.meeting_id,
+			"meeting_status": appointment.meeting_status,
+			"video_provider": appointment.video_provider,
+			"creation": str(appointment.creation),
+			"modified": str(appointment.modified)
+		}
+
+	except frappe.PermissionError:
+		raise
+	except frappe.DoesNotExistError:
+		raise
+	except Exception as e:
+		frappe.log_error(f"Error in get_appointment_detail: {str(e)}", "API Error")
+		frappe.throw(_("Error al obtener detalles del appointment"))
+
+
+@frappe.whitelist(allow_guest=True, methods=['POST'])
+def cancel_my_appointment(
+	appointment_name: str,
+	honeypot: Optional[str] = None
+) -> Dict[str, Any]:
+	"""
+	Cancel an appointment owned by the authenticated User Contact.
+
+	Requires valid authentication token. User can only cancel their own appointments.
+
+	Rate limited: 5 requests per minute per IP.
+	Protected by honeypot field.
+
+	Args:
+		appointment_name: Name of the appointment to cancel
+		honeypot: Honeypot field (should be empty)
+
+	Returns:
+		dict: Result with success status and message
+
+	Example:
+		```javascript
+		frappe.call({
+			method: "meet_scheduling.api.appointment_api.cancel_my_appointment",
+			args: {
+				appointment_name: "APT-00001"
+			},
+			headers: {
+				"X-User-Contact-Token": "your-auth-token-here"
+			},
+			callback: function(r) {
+				console.log("Result:", r.message);
+			}
+		});
+		```
+	"""
+	# Security checks
+	check_honeypot(honeypot)
+	check_rate_limit("cancel_my_appointment", limit=5, seconds=60)
+
+	# Validate authentication
+	user_contact = get_current_user_contact()
+	if not user_contact:
+		frappe.throw(
+			_("Authentication required. Please register or login first."),
+			frappe.AuthenticationError
+		)
+
+	# Validate input
+	appointment_name = validate_docname(appointment_name, "appointment_name")
+
+	try:
+		# Check appointment exists
+		if not frappe.db.exists("Appointment", appointment_name):
+			frappe.throw(_("Appointment not found"), frappe.DoesNotExistError)
+
+		# Validate ownership
+		validate_user_contact_ownership(user_contact, "Appointment", appointment_name)
+
+		# Get appointment
+		appointment = frappe.get_doc("Appointment", appointment_name)
+
+		# Determine action based on docstatus
+		if appointment.docstatus == 0:
+			# Draft - delete
+			frappe.delete_doc("Appointment", appointment_name, ignore_permissions=True)
+			frappe.db.commit()
+			return {
+				"success": True,
+				"action": "deleted",
+				"message": _("Appointment eliminado exitosamente")
+			}
+		elif appointment.docstatus == 1:
+			# Submitted - cancel
+			appointment.cancel()
+			frappe.db.commit()
+			return {
+				"success": True,
+				"action": "cancelled",
+				"message": _("Appointment cancelado exitosamente")
+			}
+		elif appointment.docstatus == 2:
+			return {
+				"success": False,
+				"action": "none",
+				"message": _("El appointment ya está cancelado")
+			}
+		else:
+			frappe.throw(_("Estado de documento inválido"))
+
+	except frappe.PermissionError:
+		raise
+	except frappe.DoesNotExistError:
+		raise
+	except Exception as e:
+		frappe.log_error(f"Error in cancel_my_appointment: {str(e)}", "API Error")
+		frappe.throw(_("Error al cancelar appointment"))
