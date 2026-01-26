@@ -1,0 +1,55 @@
+source,target
+Access Token,Token de acceso
+Account Name,Nombre de cuenta
+Appointment,Cita
+Availability Plan,Plan de disponibilidad
+Availability Slot,Espacio de disponibilidad
+Calendar Exception,Excepción de calendario
+Calendar Resource,Recurso de calendario
+Call Link Mode,Modo de enlace de llamada
+Cancelled,Cancelada
+Closed,Cerrado
+Completed,Completada
+Confirmed,Confirmada
+Date,Fecha
+Draft,Borrador
+Draft Expires At,Borrador expira en
+End Datetime,Fecha y hora de fin
+End Time,Hora de fin
+Friday,Viernes
+Is Active,Está activo
+Location,Ubicación
+Manual Meeting Notes,Notas de reunión manual
+Manual Meeting URL,URL de reunión manual
+Meeting Created At,Reunión creada en
+Meeting Error,Error de reunión
+Meeting ID,ID de reunión
+Meeting Status,Estado de reunión
+Meeting URL,URL de reunión
+Monday,Lunes
+No-show,No asistió
+Notes,Notas
+Party,Tercero
+Party Type,Tipo de tercero
+Plan Name,Nombre del plan
+Profile Name,Nombre del perfil
+Provider,Proveedor
+Provider Account,Cuenta de proveedor
+Provider Payload,Datos del proveedor
+Reason,Razón
+Refresh Token,Token de actualización
+Resource Name,Nombre del recurso
+Saturday,Sábado
+Service,Servicio
+Source,Origen
+Start Datetime,Fecha y hora de inicio
+Start Time,Hora de inicio
+Status,Estado
+Sunday,Domingo
+Thursday,Jueves
+Timezone,Zona horaria
+Tuesday,Martes
+User contact,Contacto de usuario
+Video Call Profile,Perfil de videollamada
+Video Provider,Proveedor de video
+Wednesday,Miércoles
