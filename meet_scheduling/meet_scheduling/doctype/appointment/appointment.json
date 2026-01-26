@@ -7,8 +7,9 @@
  "engine": "InnoDB",
  "field_order": [
   "datos_base_section",
-  "calendar_resource",
   "user_contact",
+  "appointment_context",
+  "calendar_resource",
   "start_datetime",
   "end_datetime",
   "status",
@@ -206,13 +207,19 @@
    "fieldtype": "Link",
    "label": "User contact",
    "options": "User contact"
+  },
+  {
+   "description": "Contexto incial del porte se agenda la cita",
+   "fieldname": "appointment_context",
+   "fieldtype": "Long Text",
+   "label": "Appointment context"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-01-23 21:02:41.924874",
+ "modified": "2026-01-26 04:40:39.357984",
  "modified_by": "Administrator",
  "module": "Meet Scheduling",
  "name": "Appointment",

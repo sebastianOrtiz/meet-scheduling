@@ -21,6 +21,55 @@ from meet_scheduling.meet_scheduling.video_calls.base import VideoCallError
 
 
 @frappe.whitelist()
+def get_active_calendar_resources() -> List[Dict[str, Any]]:
+	"""
+	Obtiene todos los Calendar Resources activos disponibles para agendar citas.
+
+	Returns:
+		List[Dict]: Lista de Calendar Resources activos con sus detalles
+
+	Example Response:
+		```json
+		[
+			{
+				"name": "CR-00001",
+				"resource_name": "Dr. Juan Pérez",
+				"resource_type": "Person",
+				"timezone": "America/Bogota",
+				"slot_duration_minutes": 30,
+				"capacity": 1,
+				"video_call_profile": "VCP-00001"
+			}
+		]
+		```
+	"""
+	try:
+		# Obtener Calendar Resources activos
+		resources = frappe.get_all(
+			"Calendar Resource",
+			filters={"is_active": 1},
+			fields=[
+				"name",
+				"resource_name",
+				"resource_type",
+				"timezone",
+				"slot_duration_minutes",
+				"capacity",
+				"draft_expiration_minutes",
+				"availability_plan",
+				"video_call_profile"
+			],
+			order_by="resource_name asc"
+		)
+
+		return resources
+
+	except Exception as e:
+		frappe.log_error(f"Error getting calendar resources: {str(e)}")
+		frappe.throw(_("Error al obtener recursos de calendario"))
+
+
+@frappe.whitelist()
 def get_available_slots(calendar_resource: str, from_date: str, to_date: str) -> List[Dict[str, Any]]:
 	"""
 	Obtiene slots disponibles para un rango de fechas.
@@ -272,7 +321,8 @@ def create_and_confirm_appointment(
 	calendar_resource: str,
 	user_contact: str,
 	start_datetime: str,
-	end_datetime: str
+	end_datetime: str,
+	appointment_context: Optional[str] = None
 ) -> Dict[str, Any]:
 	"""
 	Crea y confirma un appointment en una sola operación.
@@ -287,6 +337,7 @@ def create_and_confirm_appointment(
 		user_contact: nombre del User Contact
 		start_datetime: inicio (YYYY-MM-DD HH:MM:SS)
 		end_datetime: fin (YYYY-MM-DD HH:MM:SS)
+		appointment_context: contexto adicional del appointment (opcional)
 
 	Returns:
 		dict: Appointment confirmado
@@ -299,7 +350,8 @@ def create_and_confirm_appointment(
 				calendar_resource: "Sebastian Ortiz",
 				user_contact: "UC-00001",
 				start_datetime: "2026-01-20 10:00:00",
-				end_datetime: "2026-01-20 10:30:00"
+				end_datetime: "2026-01-20 10:30:00",
+				appointment_context: "Consulta sobre tema legal específico"
 			},
 			callback: function(r) {
 				console.log("Appointment confirmado:", r.message);
@@ -340,7 +392,8 @@ def create_and_confirm_appointment(
 			"user_contact": user_contact,
 			"start_datetime": start_datetime,
 			"end_datetime": end_datetime,
-			"status": "Draft"
+			"status": "Draft",
+			"appointment_context": appointment_context or ""
 		})
 
 		# Guardar

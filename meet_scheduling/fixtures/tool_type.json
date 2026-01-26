@@ -5,8 +5,18 @@
         "tool_name": "meet_scheduling",
         "tool_label": "Agendamiento de Citas",
         "app_name": "meet_scheduling",
-        "icon": "calendar",
+        "icon": "Calendar",
         "description": "Permite agendar citas según disponibilidad de Calendar Resources",
+        "is_active": 1
+    },
+    {
+        "doctype": "Tool Type",
+        "name": "my_appointments",
+        "tool_name": "my_appointments",
+        "tool_label": "Mis Citas",
+        "app_name": "meet_scheduling",
+        "icon": "ClipboardList",
+        "description": "Visualiza y gestiona tus citas agendadas",
         "is_active": 1
     }
 ]
