@@ -2,6 +2,10 @@
 Appointment API Endpoints
 
 Whitelisted functions for frontend/external use.
+All public endpoints allow guest access with security protections:
+- Rate limiting by IP address
+- Honeypot validation for bot detection
+- Input sanitization
 """
 
 import frappe
@@ -19,11 +23,24 @@ from meet_scheduling.meet_scheduling.scheduling.availability import get_availabi
 from meet_scheduling.meet_scheduling.video_calls.factory import get_adapter
 from meet_scheduling.meet_scheduling.video_calls.base import VideoCallError
 
+# Import security utilities
+from meet_scheduling.api.security import (
+    check_rate_limit,
+    check_honeypot,
+    validate_date_string,
+    validate_datetime_string,
+    validate_docname,
+    sanitize_string,
+    get_client_ip
+)
 
-@frappe.whitelist()
+
+@frappe.whitelist(allow_guest=True, methods=['GET'])
 def get_active_calendar_resources() -> List[Dict[str, Any]]:
 	"""
 	Obtiene todos los Calendar Resources activos disponibles para agendar citas.
+
+	Rate limited: 30 requests per minute per IP.
 
 	Returns:
 		List[Dict]: Lista de Calendar Resources activos con sus detalles
@@ -43,6 +60,9 @@ def get_active_calendar_resources() -> List[Dict[str, Any]]:
 		]
 		```
 	"""
+	# Rate limit check
+	check_rate_limit("get_calendar_resources", limit=30, seconds=60)
+
 	try:
 		# Obtener Calendar Resources activos
 		resources = frappe.get_all(
@@ -69,13 +89,15 @@ def get_active_calendar_resources() -> List[Dict[str, Any]]:
 		frappe.throw(_("Error al obtener recursos de calendario"))
 
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True, methods=['GET'])
 def get_available_slots(calendar_resource: str, from_date: str, to_date: str) -> List[Dict[str, Any]]:
 	"""
 	Obtiene slots disponibles para un rango de fechas.
 
 	Este endpoint es usado por el frontend para mostrar slots disponibles
 	en un calendario o lista.
+
+	Rate limited: 30 requests per minute per IP.
 
 	Args:
 		calendar_resource: nombre del Calendar Resource
@@ -108,6 +130,14 @@ def get_available_slots(calendar_resource: str, from_date: str, to_date: str) ->
 		});
 		```
 	"""
+	# Rate limit check
+	check_rate_limit("get_available_slots", limit=30, seconds=60)
+
+	# Validate inputs
+	calendar_resource = validate_docname(calendar_resource, "calendar_resource")
+	from_date = validate_date_string(from_date, "from_date")
+	to_date = validate_date_string(to_date, "to_date")
+
 	try:
 		# Validar que el Calendar Resource existe
 		if not frappe.db.exists("Calendar Resource", calendar_resource):
@@ -137,7 +167,7 @@ def get_available_slots(calendar_resource: str, from_date: str, to_date: str) ->
 		frappe.throw(_(f"Error al obtener slots disponibles: {str(e)}"))
 
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True, methods=['GET', 'POST'])
 def validate_appointment(
 	calendar_resource: str,
 	start_datetime: str,
@@ -147,6 +177,8 @@ def validate_appointment(
 	"""
 	Valida si un appointment es válido ANTES de guardarlo.
 	Útil para UI/frontend para mostrar errores/warnings antes de submit.
+
+	Rate limited: 20 requests per minute per IP.
 
 	Args:
 		calendar_resource: nombre del Calendar Resource
@@ -181,6 +213,9 @@ def validate_appointment(
 		});
 		```
 	"""
+	# Rate limit check
+	check_rate_limit("validate_appointment", limit=20, seconds=60)
+
 	errors = []
 	warnings = []
 	availability_ok = True
@@ -316,13 +351,14 @@ def validate_appointment(
 		}
 
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True, methods=['POST'])
 def create_and_confirm_appointment(
 	calendar_resource: str,
 	user_contact: str,
 	start_datetime: str,
 	end_datetime: str,
-	appointment_context: Optional[str] = None
+	appointment_context: Optional[str] = None,
+	honeypot: Optional[str] = None
 ) -> Dict[str, Any]:
 	"""
 	Crea y confirma un appointment en una sola operación.
@@ -332,12 +368,16 @@ def create_and_confirm_appointment(
 	2. Hace submit (lo confirma)
 	3. Retorna el documento confirmado
 
+	Rate limited: 5 requests per minute per IP (write operation).
+	Protected by honeypot field.
+
 	Args:
 		calendar_resource: nombre del Calendar Resource
 		user_contact: nombre del User Contact
 		start_datetime: inicio (YYYY-MM-DD HH:MM:SS)
 		end_datetime: fin (YYYY-MM-DD HH:MM:SS)
 		appointment_context: contexto adicional del appointment (opcional)
+		honeypot: campo honeypot para detección de bots (debe estar vacío)
 
 	Returns:
 		dict: Appointment confirmado
@@ -359,6 +399,18 @@ def create_and_confirm_appointment(
 		});
 		```
 	"""
+	# Security checks
+	check_honeypot(honeypot)
+	check_rate_limit("create_appointment", limit=5, seconds=60)
+
+	# Validate and sanitize inputs
+	calendar_resource = validate_docname(calendar_resource, "calendar_resource")
+	user_contact = validate_docname(user_contact, "user_contact")
+	start_datetime = validate_datetime_string(start_datetime, "start_datetime")
+	end_datetime = validate_datetime_string(end_datetime, "end_datetime")
+	if appointment_context:
+		appointment_context = sanitize_string(appointment_context, 2000)
+
 	try:
 		# Validar que el Calendar Resource existe
 		if not frappe.db.exists("Calendar Resource", calendar_resource):
