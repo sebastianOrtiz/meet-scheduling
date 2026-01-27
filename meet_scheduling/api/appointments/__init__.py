@@ -4,8 +4,8 @@ Appointments API Domain
 Handles appointment scheduling, validation, and user's appointment management.
 """
 
-# Re-export endpoints from appointment_api for new-style imports
-from meet_scheduling.api.appointment_api import (
+# Export endpoints from the endpoints module
+from meet_scheduling.api.appointments.endpoints import (
     # Calendar Resources
     get_active_calendar_resources,
     get_available_slots,

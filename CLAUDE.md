@@ -794,12 +794,11 @@ La API sigue los mismos principios que `common_configurations`:
 api/
 ├── __init__.py              # Re-exports para acceso conveniente
 ├── appointments/            # Dominio: Citas
-│   └── __init__.py          # Re-exporta desde appointment_api
-├── shared/                  # Utilidades (importa de common_configurations)
-│   ├── __init__.py          # Re-exporta utilidades compartidas
-│   └── validators.py        # Validadores específicos de citas
-├── appointment_api.py       # Endpoints de citas (legacy, completo)
-└── security.py              # Legacy - re-exporta de shared
+│   ├── __init__.py          # Re-exporta desde endpoints
+│   └── endpoints.py         # Todos los endpoints de appointments
+└── shared/                  # Utilidades (importa de common_configurations)
+    ├── __init__.py          # Re-exporta utilidades compartidas
+    └── validators.py        # Validadores específicos de citas
 ```
 
 ### Importación de Utilidades Compartidas
@@ -829,19 +828,21 @@ from .validators import (
 
 ### Uso de la API
 
-#### Nuevo estilo (recomendado)
 ```javascript
+// Obtener citas del usuario autenticado
 frappe.call({
     method: "meet_scheduling.api.appointments.get_my_appointments",
     headers: { "X-User-Contact-Token": "token-here" }
 });
-```
 
-#### Estilo legacy (compatible)
-```javascript
+// Obtener slots disponibles (público)
 frappe.call({
-    method: "meet_scheduling.api.appointment_api.get_my_appointments",
-    headers: { "X-User-Contact-Token": "token-here" }
+    method: "meet_scheduling.api.appointments.get_available_slots",
+    args: {
+        calendar_resource: "CR-00001",
+        from_date: "2026-01-20",
+        to_date: "2026-01-27"
+    }
 });
 ```
 

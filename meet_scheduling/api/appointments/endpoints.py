@@ -24,8 +24,8 @@ from meet_scheduling.meet_scheduling.scheduling.availability import get_availabi
 from meet_scheduling.meet_scheduling.video_calls.factory import get_adapter
 from meet_scheduling.meet_scheduling.video_calls.base import VideoCallError
 
-# Import security utilities
-from meet_scheduling.api.security import (
+# Import security utilities from shared (which imports from common_configurations)
+from meet_scheduling.api.shared import (
     check_rate_limit,
     check_honeypot,
     validate_date_string,
@@ -121,7 +121,7 @@ def get_available_slots(calendar_resource: str, from_date: str, to_date: str) ->
 	Example:
 		```javascript
 		frappe.call({
-			method: "meet_scheduling.meet_scheduling.api.appointment_api.get_available_slots",
+			method: "meet_scheduling.api.appointments.get_available_slots",
 			args: {
 				calendar_resource: "Sebastian Ortiz",
 				from_date: "2026-01-20",
@@ -202,7 +202,7 @@ def validate_appointment(
 	Example:
 		```javascript
 		frappe.call({
-			method: "meet_scheduling.meet_scheduling.api.appointment_api.validate_appointment",
+			method: "meet_scheduling.api.appointments.validate_appointment",
 			args: {
 				calendar_resource: "Sebastian Ortiz",
 				start_datetime: "2026-01-20 10:00:00",
@@ -391,7 +391,7 @@ def create_and_confirm_appointment(
 	Example:
 		```javascript
 		frappe.call({
-			method: "meet_scheduling.api.appointment_api.create_and_confirm_appointment",
+			method: "meet_scheduling.api.appointments.create_and_confirm_appointment",
 			args: {
 				calendar_resource: "Sebastian Ortiz",
 				user_contact: "UC-00001",
@@ -510,7 +510,7 @@ def cancel_or_delete_appointment(appointment_name: str) -> Dict[str, Any]:
 	Example:
 		```javascript
 		frappe.call({
-			method: "meet_scheduling.api.appointment_api.cancel_or_delete_appointment",
+			method: "meet_scheduling.api.appointments.cancel_or_delete_appointment",
 			args: {
 				appointment_name: "APT-00001"
 			},
@@ -586,7 +586,7 @@ def generate_meeting(appointment_name: str) -> Dict[str, Any]:
 	Example:
 		```javascript
 		frappe.call({
-			method: "meet_scheduling.meet_scheduling.api.appointment_api.generate_meeting",
+			method: "meet_scheduling.api.appointments.generate_meeting",
 			args: {
 				appointment_name: "APT-00001"
 			},
@@ -702,7 +702,7 @@ def get_my_appointments(
 	Example:
 		```javascript
 		frappe.call({
-			method: "meet_scheduling.api.appointment_api.get_my_appointments",
+			method: "meet_scheduling.api.appointments.get_my_appointments",
 			args: {
 				status: "Confirmed",
 				from_date: "2026-01-01"
@@ -828,7 +828,7 @@ def get_appointment_detail(appointment_name: str) -> Dict[str, Any]:
 	Example:
 		```javascript
 		frappe.call({
-			method: "meet_scheduling.api.appointment_api.get_appointment_detail",
+			method: "meet_scheduling.api.appointments.get_appointment_detail",
 			args: {
 				appointment_name: "APT-00001"
 			},
@@ -918,7 +918,7 @@ def cancel_my_appointment(
 	Example:
 		```javascript
 		frappe.call({
-			method: "meet_scheduling.api.appointment_api.cancel_my_appointment",
+			method: "meet_scheduling.api.appointments.cancel_my_appointment",
 			args: {
 				appointment_name: "APT-00001"
 			},
