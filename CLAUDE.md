@@ -774,4 +774,155 @@ bench install-app meet_scheduling
 
 ---
 
-**Última actualización**: 2026-01-21
+**Última actualización**: 2026-01-27
+
+---
+
+## Arquitectura de la API Modular
+
+### Principios de Diseño
+
+La API sigue los mismos principios que `common_configurations`:
+
+1. **SOLID**: Single Responsibility, Open/Closed, Dependency Inversion
+2. **KISS**: Estructura simple, sin sobre-ingeniería
+3. **DRY**: Utilidades compartidas importadas de `common_configurations`
+
+### Estructura de Carpetas
+
+```
+api/
+├── __init__.py              # Re-exports para acceso conveniente
+├── appointments/            # Dominio: Citas
+│   └── __init__.py          # Re-exporta desde appointment_api
+├── shared/                  # Utilidades (importa de common_configurations)
+│   ├── __init__.py          # Re-exporta utilidades compartidas
+│   └── validators.py        # Validadores específicos de citas
+├── appointment_api.py       # Endpoints de citas (legacy, completo)
+└── security.py              # Legacy - re-exporta de shared
+```
+
+### Importación de Utilidades Compartidas
+
+**IMPORTANTE**: Las utilidades de seguridad y validación se importan de `common_configurations`:
+
+```python
+# En meet_scheduling/api/shared/__init__.py
+from common_configurations.api.shared import (
+    check_rate_limit,
+    get_client_ip,
+    check_honeypot,
+    get_current_user_contact,
+    require_user_contact,
+    validate_user_contact_ownership,
+    sanitize_string,
+    AUTH_HEADER,
+)
+
+# Validadores específicos de appointments
+from .validators import (
+    validate_date_string,
+    validate_datetime_string,
+    validate_docname,
+)
+```
+
+### Uso de la API
+
+#### Nuevo estilo (recomendado)
+```javascript
+frappe.call({
+    method: "meet_scheduling.api.appointments.get_my_appointments",
+    headers: { "X-User-Contact-Token": "token-here" }
+});
+```
+
+#### Estilo legacy (compatible)
+```javascript
+frappe.call({
+    method: "meet_scheduling.api.appointment_api.get_my_appointments",
+    headers: { "X-User-Contact-Token": "token-here" }
+});
+```
+
+### Endpoints Disponibles
+
+#### Públicos (allow_guest=True, sin token)
+- `get_active_calendar_resources`: Lista recursos de calendario activos
+- `get_available_slots`: Obtiene slots disponibles para un rango de fechas
+- `validate_appointment`: Valida un appointment antes de crearlo
+
+#### Autenticados (requieren token)
+- `create_and_confirm_appointment`: Crea y confirma una cita
+- `get_my_appointments`: Lista citas del usuario autenticado
+- `get_appointment_detail`: Detalle de una cita específica
+- `cancel_my_appointment`: Cancela una cita del usuario
+
+#### Administrativos (requieren permisos Frappe)
+- `cancel_or_delete_appointment`: Cancela o elimina cualquier cita
+- `generate_meeting`: Genera meeting para una cita
+
+### Autenticación por Token
+
+Los endpoints autenticados validan el token de User Contact:
+
+```python
+@frappe.whitelist(allow_guest=True, methods=['GET'])
+def get_my_appointments():
+    # Importar de shared (que importa de common_configurations)
+    from meet_scheduling.api.shared import (
+        check_rate_limit,
+        get_current_user_contact
+    )
+
+    check_rate_limit("get_my_appointments", limit=30, seconds=60)
+
+    user_contact = get_current_user_contact()
+    if not user_contact:
+        frappe.throw("Authentication required", frappe.AuthenticationError)
+
+    # ... lógica
+```
+
+### Validadores Específicos
+
+En `api/shared/validators.py`:
+
+```python
+def validate_date_string(date_str: str, field_name: str = "date") -> str:
+    """Valida formato YYYY-MM-DD"""
+    pass
+
+def validate_datetime_string(datetime_str: str, field_name: str = "datetime") -> str:
+    """Valida formato YYYY-MM-DD HH:MM:SS"""
+    pass
+
+def validate_docname(name: str, field_name: str = "name") -> str:
+    """Valida nombre de documento Frappe"""
+    pass
+```
+
+---
+
+## Dependencias
+
+### De common_configurations
+
+Esta app depende de `common_configurations` para:
+
+1. **Autenticación por token**: `get_current_user_contact()`, `require_user_contact()`
+2. **Rate limiting**: `check_rate_limit()`, `get_client_ip()`
+3. **Seguridad**: `check_honeypot()`, `validate_user_contact_ownership()`
+4. **Validación**: `sanitize_string()`, validadores genéricos
+
+### Instalación
+
+```bash
+# common_configurations debe estar instalado primero
+bench get-app common_configurations
+bench install-app common_configurations
+
+# Luego meet_scheduling
+bench get-app meet_scheduling
+bench install-app meet_scheduling
+```
