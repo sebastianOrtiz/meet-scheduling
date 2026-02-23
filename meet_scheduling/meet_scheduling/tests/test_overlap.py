@@ -22,8 +22,7 @@ class TestOverlap(unittest.TestCase):
 			resource = frappe.get_doc({
 				"doctype": "Calendar Resource",
 				"resource_name": "Test Resource Overlap",
-				"resource_type": "Person",
-				"timezone": "America/Bogota",
+					"timezone": "America/Bogota",
 				"slot_duration_minutes": 30,
 				"capacity": 2,  # Capacity of 2 for testing
 				"draft_expiration_minutes": 15,

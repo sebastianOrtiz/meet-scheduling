@@ -26,16 +26,15 @@ La aplicación está compuesta por 7 DocTypes principales:
 **Propósito**: Representa el recurso que se agenda (persona, sala, equipo o servicio).
 
 **Campos principales**:
-- `resource_name` (Data, unique): Nombre visible del calendario
-- `resource_type` (Select): Person, Room, Equipment, Service
-- `reference_doctype` (Link): DocType externo vinculado (ej: Employee)
-- `reference_name` (Dynamic Link): Registro específico vinculado
-- `timezone` (Data): Zona horaria del calendario (ej: "America/Bogota")
+- `resource_name` (Data, unique, reqd): Nombre visible del calendario
+- `timezone` (Data): Zona horaria del calendario (default: "America/Bogota")
 - `slot_duration_minutes` (Int): Duración mínima de cita (default: 60)
 - `capacity` (Int): Citas simultáneas permitidas (default: 1)
 - `availability_plan` (Link → Availability Plan): Horario semanal asignado
 - `video_call_profile` (Link → Video Call Profile): Configuración de videollamada por defecto
 - `is_active` (Check): Indica si se puede agendar
+
+**Secciones**: Incluye "Configuración de Agenda" para agrupar campos de scheduling.
 
 **Naming**: By fieldname (`resource_name`)
 
@@ -115,20 +114,11 @@ La aplicación está compuesta por 7 DocTypes principales:
 - `notes` (Text): Observaciones adicionales
 - `source` (Select): Web, Admin, API
 
-#### Enlace de Llamada
+#### Video Call
 - `video_call_profile` (Link → Video Call Profile): Perfil aplicado
-- `call_link_mode` (Select): inherit, manual, auto
-- `manual_meeting_url` (Small Text): Enlace pegado manualmente
-- `manual_meeting_notes` (Small Text): Nota sobre el enlace manual
-
-#### Resultado Final
-- `meeting_url` (Small Text): **Enlace final que usan los participantes**
-- `video_provider` (Select): google_meet, microsoft_teams
-- `meeting_id` (Data): ID externo para editar/cancelar
-- `meeting_status` (Select): not_created, created, failed
-- `meeting_error` (Small Text): Mensaje de error si falló
-- `provider_payload` (JSON): Respuesta cruda del proveedor
-- `meeting_created_at` (Datetime): Momento de creación del enlace
+- `meeting_url` (Small Text): Enlace de la reunión (manual o auto-generado)
+- `meeting_id` (Data, read_only): ID externo del proveedor para editar/cancelar
+- `meeting_status` (Select, read_only): not_created, created, failed
 
 **Responsabilidades**:
 - Validar tiempos (start < end)
@@ -146,54 +136,47 @@ La aplicación está compuesta por 7 DocTypes principales:
 **Naming**: By fieldname (`profile_name`)
 
 **Campos principales**:
-- `profile_name` (Data, unique): Nombre del perfil
+- `profile_name` (Data, unique, reqd): Nombre del perfil
 - `is_active` (Check): Si el perfil puede usarse
-- `provider` (Select): google_meet, microsoft_teams
-- `link_mode` (Select): auto_generate, manual_only, auto_or_manual
-- `require_manual_if_auto_fails` (Check): Permitir fallback manual
-- `provider_account` (Link → Provider Account): Cuenta para generación automática
-- `generation_mode` (Select): api_create_meeting, static_template
-- `meeting_title_template` (Data): Plantilla Jinja para título
-- `meeting_description_template` (Text): Plantilla Jinja para descripción
-- `manual_url_instructions` (Text): Instrucciones cuando es manual
-- `default_duration_minutes` (Int): Duración por defecto
-- `create_on` (Select): on_submit (recomendado), manual
-- `timezone_mode` (Select): calendar_timezone, user_timezone, custom
-- `extra_options_json` (JSON): Opciones adicionales del proveedor
-- `fallback_profile` (Link → Video Call Profile): Perfil alternativo
+- `provider` (Select, reqd): google_meet, microsoft_teams
+- `link_mode` (Select, reqd): auto_generate, manual_only (default), auto_or_manual
+- `provider_account` (Link → Provider Account): Cuenta para generación automática (visible solo cuando link_mode !== 'manual_only')
+- `meeting_title_template` (Data): Plantilla Jinja para título (condicional)
+
+**Sección de auto-configuración**: Solo visible cuando `link_mode !== 'manual_only'`.
 
 **Modos de enlace**:
+- **manual_only** (default): El usuario pega el enlace
 - **auto_generate**: Genera enlace automático vía API
-- **manual_only**: El usuario pega el enlace
 - **auto_or_manual**: Intenta automático, si falla permite manual
-
-**Cuándo crear**:
-- **on_submit**: Recomendado, crea el meeting al confirmar la cita
-- **manual**: Solo cuando el usuario presiona un botón
 
 ---
 
 ### 7. Provider Account
-**Propósito**: Credenciales para crear meetings por API (Google Meet / Microsoft Teams).
+**Propósito**: Credenciales OAuth para crear meetings por API (Google Meet / Microsoft Teams).
 
 **Campos principales**:
 - `account_name` (Data): Nombre identificador
 - `provider` (Select): google_meet, microsoft_teams
-- `owner_user` (Link → User): Usuario que autoriza la conexión
-- `auth_mode` (Select): oauth_user, service_account
-- `status` (Select): Connected, Expired, Revoked, Pending
-- `access_token` (Password): Token de acceso (encriptado)
-- `refresh_token` (Password): Token de refresco (encriptado)
+- `status` (Select): Pending (default), Connected, Expired, Revoked
+- `client_id` (Data): ID de cliente OAuth
+- `client_secret` (Password): Secreto de cliente OAuth
+- `access_token` (Password, read_only): Token de acceso (encriptado)
+- `refresh_token` (Password, read_only): Token de refresco (encriptado)
 - `token_expires_at` (Datetime): Expiración del token
 - `scopes` (Small Text): Permisos OAuth
 
+**Secciones**:
+- "Credenciales OAuth": `client_id`, `client_secret`
+- "Tokens": `access_token`, `refresh_token`, `token_expires_at`, `scopes` (read_only)
+- "Guía de Configuración": Campo HTML con guías paso a paso para Google Meet y Microsoft Teams
+
 **Responsabilidades**:
-- Almacenar credenciales de forma segura
+- Almacenar credenciales OAuth de forma segura
 - Gestionar estado de conexión
 - Facilitar refresh token
-- (Futuro) Soportar service accounts
 
-**Seguridad**: CRÍTICO - Debe estar muy restringido con permisos, tokens encriptados
+**Seguridad**: CRÍTICO - Debe estar muy restringido con permisos, tokens encriptados y read_only
 
 ---
 
@@ -232,22 +215,19 @@ La aplicación está compuesta por 7 DocTypes principales:
 
 ### Flujo 3: Videollamada - Manual vs Automática
 
-#### Modo Manual
-- `call_link_mode` = manual O perfil con `link_mode` = manual_only
-- Usuario pega `manual_meeting_url`
-- Sistema copia a `meeting_url` como enlace final
+El modo se determina por `link_mode` del Video Call Profile vinculado.
 
-#### Modo Auto
-- `call_link_mode` = auto O perfil con `link_mode` = auto_generate
-- En `on_submit` (recomendado):
-  - Se crea meeting vía adapter (factory pattern)
-  - Se llena `meeting_url`, `meeting_id`, `provider_payload`, `meeting_status`
+#### Modo Manual (`manual_only`)
+- Usuario pega el enlace directamente en `meeting_url`
+- Se requiere antes de confirmar (submit)
 
-#### Modo Auto con Fallback Manual
-- Perfil con `link_mode` = auto_or_manual + `require_manual_if_auto_fails` = 1
-- Si falla creación:
-  - Se marca `meeting_status` = failed
-  - Se permite pegar `manual_meeting_url`
+#### Modo Auto (`auto_generate`)
+- En `on_submit`: se crea meeting vía adapter (factory pattern)
+- Se llena `meeting_url`, `meeting_id`, `meeting_status`
+
+#### Modo Auto o Manual (`auto_or_manual`)
+- Si `meeting_url` ya tiene valor, se usa tal cual
+- Si no, se crea automáticamente en `on_submit`
 
 ---
 
@@ -455,13 +435,11 @@ def check_overlap(calendar_resource, start_datetime, end_datetime, exclude_appoi
   - Disponibilidad efectiva (usar servicio `availability.py`)
   - Overlaps según capacidad y status (usar servicio `overlap.py`)
 - **Crear videollamada** si corresponde:
-  - Si modo efectivo incluye auto Y `create_on` = on_submit
-  - Usar factory para obtener adapter
-  - Llamar `adapter.create_meeting(profile, appointment)`
-  - Llenar `meeting_url`, `meeting_id`, `meeting_status`, `provider_payload`
-- **Si modo efectivo es manual**:
-  - Exigir `manual_meeting_url` para Submit
-  - Copiar `manual_meeting_url` → `meeting_url`
+  - Se lee `link_mode` del Video Call Profile vinculado
+  - Si `auto_generate` → crear vía adapter
+  - Si `auto_or_manual` y no hay `meeting_url` → crear vía adapter
+  - Si `manual_only` → exigir `meeting_url` ya llenado
+  - Llenar `meeting_url`, `meeting_id`, `meeting_status`
 
 #### `on_cancel`
 - Si meeting fue creado por API:
@@ -540,7 +518,7 @@ def validate_appointment(calendar_resource, start_datetime, end_datetime, appoin
 @frappe.whitelist()
 def generate_meeting(appointment_name):
     """
-    Solo si create_on=manual o reintentos tras falla
+    Para generación manual o reintentos tras falla
     Retorna: {meeting_url, meeting_id, status}
     """
 ```
@@ -559,8 +537,8 @@ def generate_meeting(appointment_name):
   - Disponibilidad efectiva
   - No solapes (según capacidad)
 - **Videollamada**:
-  - Si manual → `manual_meeting_url` requerido
-  - Si auto → `meeting_status` = created O permitir fallback manual
+  - Si manual_only → `meeting_url` requerido
+  - Si auto → `meeting_status` = created
 
 ### Cancelled
 - Liberar horario
@@ -630,7 +608,7 @@ El módulo está listo cuando:
   - auto_generate
   - manual_only
   - auto_or_manual con fallback
-- ✅ Logs/errores claros: `meeting_error` útil para soporte
+- ✅ Logs/errores claros: errores se registran via `frappe.log_error`
 - ✅ Tokens protegidos y permisos aplicados
 - ✅ Tests unitarios y de integración pasando
 
@@ -774,7 +752,7 @@ bench install-app meet_scheduling
 
 ---
 
-**Última actualización**: 2026-01-27
+**Última actualización**: 2026-02-23
 
 ---
 

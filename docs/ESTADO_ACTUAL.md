@@ -1,7 +1,7 @@
 # Estado Actual del Proyecto - Meet Scheduling
 
-**Fecha**: 2026-01-22
-**Sesión**: Continuación (Fase 5 completada + correcciones)
+**Fecha**: 2026-02-23
+**Sesion**: Simplificacion de DocTypes + correcciones previas
 
 ---
 
@@ -160,7 +160,17 @@ Todos los endpoints con:
 
 ---
 
-## 🔧 Correcciones Recientes (Sesión Actual)
+## Simplificacion de DocTypes (2026-02-23)
+
+Se simplificaron tres DocTypes eliminando campos redundantes y mejorando la estructura:
+
+- **Calendar Resource**: Eliminados `resource_type`, `reference_doctype`, `reference_name`. Timezone default cambiado a "America/Bogota". `resource_name` ahora es requerido. Agregada seccion "Configuracion de Agenda".
+- **Video Call Profile**: Eliminados 9 campos (`require_manual_if_auto_fails`, `generation_mode`, `meeting_description_template`, `manual_url_instructions`, `default_duration_minutes`, `create_on`, `timezone_mode`, `extra_options_json`, `fallback_profile`). Default de `link_mode` cambiado a "manual_only". Seccion de auto-config solo visible cuando link_mode !== 'manual_only'.
+- **Provider Account**: Eliminados `auth_mode`, `owner_user`. Agregados `client_id`, `client_secret`. Tokens ahora son read_only. Status default es "Pending". Nuevas secciones: "Credenciales OAuth", "Tokens", "Guia de Configuracion" (HTML con guias para Google Meet y Microsoft Teams).
+
+---
+
+## Correcciones Recientes (Sesion Anterior)
 
 ### **Bug 1: TypeError con timedelta** ✅ Corregido
 **Error**: `combine() argument 2 must be datetime.time, not datetime.timedelta`
@@ -185,7 +195,7 @@ Todos los endpoints con:
 
 **Solución**:
 - Cambiado "Created" → "created" en `appointment.py:308` y `appointment_api.py:324`
-- Agregados campos faltantes: `video_provider`, `meeting_created_at`
+- Campos `video_provider`, `meeting_created_at`, `provider_payload`, `meeting_error`, `call_link_mode`, `manual_meeting_url`, `manual_meeting_notes` eliminados por redundancia (se leen del Video Call Profile o se registran vía logs)
 
 ---
 
@@ -425,7 +435,7 @@ Las fases pendientes (6-8) son **opcionales** y dependen de:
 
 **Desarrollador**: Sebastian Ortiz Valencia
 **Email**: sebastianortiz989@gmail.com
-**Última actualización**: 2026-01-22
+**Ultima actualizacion**: 2026-02-23
 
 ---
 

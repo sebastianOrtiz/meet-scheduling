@@ -22,8 +22,7 @@ class TestSlots(unittest.TestCase):
 			resource = frappe.get_doc({
 				"doctype": "Calendar Resource",
 				"resource_name": "Test Resource Slots",
-				"resource_type": "Person",
-				"timezone": "America/Bogota",
+					"timezone": "America/Bogota",
 				"slot_duration_minutes": 60,  # 1 hour slots
 				"capacity": 1,
 				"is_active": 1

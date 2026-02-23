@@ -19,26 +19,18 @@
   "service",
   "notes",
   "source",
-  "enlace_de_llamada_section",
+  "video_call_section",
   "video_call_profile",
-  "call_link_mode",
-  "manual_meeting_url",
-  "manual_meeting_notes",
-  "resultado_final_section",
   "meeting_url",
-  "video_provider",
   "meeting_id",
   "meeting_status",
-  "meeting_error",
-  "provider_payload",
-  "meeting_created_at",
   "amended_from"
  ],
  "fields": [
   {
    "fieldname": "datos_base_section",
    "fieldtype": "Section Break",
-   "label": "Datos base"
+   "label": "Basic Information"
   },
   {
    "description": "Agenda donde se reserva",
@@ -110,86 +102,38 @@
    "options": "Web\nAdmin\nAPI"
   },
   {
-   "fieldname": "enlace_de_llamada_section",
+   "fieldname": "video_call_section",
    "fieldtype": "Section Break",
-   "label": "Enlace de llamada"
+   "label": "Video Call"
   },
   {
-   "description": "Perfil aplicado a la cita",
+   "description": "Perfil de videollamada aplicado a la cita",
    "fieldname": "video_call_profile",
    "fieldtype": "Link",
    "label": "Video Call Profile",
    "options": "Video Call Profile"
   },
   {
-   "default": "inherit",
-   "description": "C\u00f3mo se resuelve el enlace",
-   "fieldname": "call_link_mode",
-   "fieldtype": "Select",
-   "label": "Call Link Mode",
-   "options": "inherit\nmanual\nauto"
-  },
-  {
-   "description": "Enlace pegado manualmente",
-   "fieldname": "manual_meeting_url",
-   "fieldtype": "Small Text",
-   "label": "Manual Meeting URL"
-  },
-  {
-   "description": "Nota sobre el enlace manual",
-   "fieldname": "manual_meeting_notes",
-   "fieldtype": "Small Text",
-   "label": "Manual Meeting Notes"
-  },
-  {
-   "fieldname": "resultado_final_section",
-   "fieldtype": "Section Break",
-   "label": "Resultado final"
-  },
-  {
-   "description": "Enlace final que usan los participantes",
+   "description": "Enlace de la reuni\u00f3n (manual o auto-generado)",
    "fieldname": "meeting_url",
    "fieldtype": "Small Text",
    "label": "Meeting URL"
   },
   {
-   "description": "Proveedor efectivo usado",
-   "fieldname": "video_provider",
-   "fieldtype": "Select",
-   "label": "Video Provider",
-   "options": "google_meet\nmicrosoft_teams"
-  },
-  {
-   "description": "ID externo para editar/cancelar",
+   "description": "ID externo del proveedor para editar/cancelar",
    "fieldname": "meeting_id",
    "fieldtype": "Data",
-   "label": "Meeting ID"
+   "label": "Meeting ID",
+   "read_only": 1
   },
   {
    "default": "not_created",
-   "description": "Resultado de la creaci\u00f3n",
+   "description": "Estado de la reuni\u00f3n en el proveedor",
    "fieldname": "meeting_status",
    "fieldtype": "Select",
    "label": "Meeting Status",
-   "options": "not_created\ncreated\nfailed"
-  },
-  {
-   "description": "Mensaje de error si fall\u00f3",
-   "fieldname": "meeting_error",
-   "fieldtype": "Small Text",
-   "label": "Meeting Error"
-  },
-  {
-   "description": "Respuesta cruda del proveedor",
-   "fieldname": "provider_payload",
-   "fieldtype": "JSON",
-   "label": "Provider Payload"
-  },
-  {
-   "description": "Momento en que se cre\u00f3 el enlace",
-   "fieldname": "meeting_created_at",
-   "fieldtype": "Datetime",
-   "label": "Meeting Created At"
+   "options": "not_created\ncreated\nfailed",
+   "read_only": 1
   },
   {
    "fieldname": "amended_from",

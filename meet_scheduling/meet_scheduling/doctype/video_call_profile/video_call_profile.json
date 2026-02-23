@@ -10,123 +10,80 @@
   "is_active",
   "provider",
   "link_mode",
-  "require_manual_if_auto_fails",
+  "manual_config_section",
+  "default_meeting_url",
+  "auto_config_section",
   "provider_account",
-  "generation_mode",
-  "meeting_title_template",
-  "meeting_description_template",
-  "manual_url_instructions",
-  "default_duration_minutes",
-  "create_on",
-  "timezone_mode",
-  "extra_options_json",
-  "fallback_profile"
+  "meeting_title_template"
  ],
  "fields": [
   {
-   "description": "Nombre del perfil. Ej: Meet - Consultas (Auto)\n",
+   "description": "Nombre descriptivo del perfil. Ej: Google Meet - Consultas, Teams - Reuniones internas",
    "fieldname": "profile_name",
    "fieldtype": "Data",
    "label": "Profile Name",
+   "reqd": 1,
    "unique": 1
   },
   {
    "default": "1",
-   "description": "Indica si el perfil puede usarse\n",
+   "description": "Desmarcar para desactivar este perfil",
    "fieldname": "is_active",
    "fieldtype": "Check",
    "label": "Is Active"
   },
   {
    "default": "google_meet",
-   "description": "Proveedor del perfil\n",
+   "description": "Proveedor de videollamada.\n- google_meet: Google Meet (requiere cuenta Google Workspace)\n- microsoft_teams: Microsoft Teams (requiere cuenta Microsoft 365)",
    "fieldname": "provider",
    "fieldtype": "Select",
    "label": "Provider",
-   "options": "google_meet\nmicrosoft_teams"
+   "options": "google_meet\nmicrosoft_teams",
+   "reqd": 1
   },
   {
-   "default": "auto_generate",
-   "description": "Define si el enlace se genera o se pega\n",
+   "default": "manual_only",
+   "description": "C\u00f3mo se obtiene el enlace de la reuni\u00f3n:\n- manual_only: Se usa el enlace fijo configurado abajo (Default Meeting URL). Se copia autom\u00e1ticamente a cada cita\n- auto_generate: El sistema crea un enlace nuevo autom\u00e1ticamente para cada cita v\u00eda API del proveedor (requiere Provider Account)\n- auto_or_manual: Si la cita ya tiene enlace se usa ese, si no se crea autom\u00e1ticamente",
    "fieldname": "link_mode",
    "fieldtype": "Select",
    "label": "Link Mode",
-   "options": "auto_generate\nmanual_only\nauto_or_manual"
+   "options": "manual_only\nauto_generate\nauto_or_manual",
+   "reqd": 1
   },
   {
-   "default": "0",
-   "description": "Permitir pegar link si falla OAuth\n",
-   "fieldname": "require_manual_if_auto_fails",
-   "fieldtype": "Check",
-   "label": "Require Manual if Auto Fails"
+   "depends_on": "eval:doc.link_mode === 'manual_only'",
+   "fieldname": "manual_config_section",
+   "fieldtype": "Section Break",
+   "label": "Video Call Link"
   },
   {
-   "description": "Cuenta usada para generar el enlace\n",
+   "depends_on": "eval:doc.link_mode === 'manual_only'",
+   "description": "Enlace fijo de videollamada que se copia autom\u00e1ticamente a cada cita creada con este perfil. Ej: https://meet.google.com/abc-defg-hij",
+   "fieldname": "default_meeting_url",
+   "fieldtype": "Small Text",
+   "label": "Default Meeting URL"
+  },
+  {
+   "depends_on": "eval:doc.link_mode !== 'manual_only'",
+   "fieldname": "auto_config_section",
+   "fieldtype": "Section Break",
+   "label": "Automatic Configuration"
+  },
+  {
+   "depends_on": "eval:doc.link_mode !== 'manual_only'",
+   "description": "Cuenta del proveedor con credenciales OAuth configuradas. Necesaria para que el sistema pueda crear reuniones autom\u00e1ticamente. Ver Provider Account para configurar.",
    "fieldname": "provider_account",
    "fieldtype": "Link",
    "label": "Provider Account",
+   "mandatory_depends_on": "eval:doc.link_mode === 'auto_generate'",
    "options": "Provider Account"
   },
   {
-   "default": "api_create_meeting",
-   "description": "M\u00e9todo t\u00e9cnico de creaci\u00f3n\n",
-   "fieldname": "generation_mode",
-   "fieldtype": "Select",
-   "label": "Generation Mode",
-   "options": "api_create_meeting\nstatic_template"
-  },
-  {
-   "description": "Plantilla t\u00edtulo. Ej: Consulta - {{ party_name }}\n",
+   "depends_on": "eval:doc.link_mode !== 'manual_only'",
+   "description": "T\u00edtulo que se asigna a la reuni\u00f3n en el proveedor. Soporta Jinja: {{ appointment.name }}, {{ appointment.calendar_resource }}",
    "fieldname": "meeting_title_template",
    "fieldtype": "Data",
    "label": "Meeting Title Template"
-  },
-  {
-   "description": "Plantilla descripci\u00f3n\n",
-   "fieldname": "meeting_description_template",
-   "fieldtype": "Text",
-   "label": "Meeting Description Template"
-  },
-  {
-   "description": "Instrucciones cuando es manual\n",
-   "fieldname": "manual_url_instructions",
-   "fieldtype": "Text",
-   "label": "Manual URL Instructions"
-  },
-  {
-   "default": "60",
-   "description": "Duraci\u00f3n por defecto\n",
-   "fieldname": "default_duration_minutes",
-   "fieldtype": "Int",
-   "label": "Default Duration (Minutes)"
-  },
-  {
-   "default": "on_submit",
-   "description": "Momento de creaci\u00f3n del enlace\n",
-   "fieldname": "create_on",
-   "fieldtype": "Select",
-   "label": "Create On",
-   "options": "on_submit\non_confirm\nmanual"
-  },
-  {
-   "default": "calendar_timezone",
-   "description": "Zona horaria usada\n",
-   "fieldname": "timezone_mode",
-   "fieldtype": "Select",
-   "label": "Timezone Mode",
-   "options": "calendar_timezone\nsystem_timezone"
-  },
-  {
-   "description": "Flags avanzados del proveedor\n",
-   "fieldname": "extra_options_json",
-   "fieldtype": "JSON",
-   "label": "Extra Options (JSON)"
-  },
-  {
-   "fieldname": "fallback_profile",
-   "fieldtype": "Link",
-   "label": "Fallback Profile",
-   "options": "Video Call Profile"
   }
  ],
  "grid_page_length": 50,

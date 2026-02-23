@@ -21,8 +21,7 @@ class TestTasks(unittest.TestCase):
 			resource = frappe.get_doc({
 				"doctype": "Calendar Resource",
 				"resource_name": "Test Resource Tasks",
-				"resource_type": "Person",
-				"timezone": "America/Bogota",
+					"timezone": "America/Bogota",
 				"slot_duration_minutes": 30,
 				"capacity": 1,
 				"draft_expiration_minutes": 15,

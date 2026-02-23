@@ -1,6 +1,6 @@
 {
  "charts": [],
- "content": "[{\"id\":\"5-QOHrnu6S\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Meet Scheduling</span>\",\"col\":12}},{\"id\":\"KAI3ToKuDZ\",\"type\":\"card\",\"data\":{\"card_name\":\"Configuraci\u00f3n\",\"col\":4}}]",
+ "content": "[{\"id\":\"5-QOHrnu6S\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Meet Scheduling</span>\",\"col\":12}},{\"id\":\"KAI3ToKuDZ\",\"type\":\"card\",\"data\":{\"card_name\":\"Citas\",\"col\":4}},{\"id\":\"rPleNVuJDS\",\"type\":\"card\",\"data\":{\"card_name\":\"Configuracion de calendario\",\"col\":4}},{\"id\":\"wwUooZwy6f\",\"type\":\"card\",\"data\":{\"card_name\":\"Cuentas de agendamiento\",\"col\":4}}]",
  "creation": "2026-01-21 07:54:31.985013",
  "custom_blocks": [],
  "docstatus": 0,
@@ -16,8 +16,66 @@
   {
    "hidden": 0,
    "is_query_report": 0,
-   "label": "Configuraci\u00f3n",
-   "link_count": 6,
+   "label": "Citas",
+   "link_count": 1,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Cita",
+   "link_count": 0,
+   "link_to": "Appointment",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Configuracion de calendario",
+   "link_count": 3,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Calendar Resource",
+   "link_count": 0,
+   "link_to": "Calendar Resource",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Availability Plan",
+   "link_count": 0,
+   "link_to": "Availability Plan",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Calendar Exception",
+   "link_count": 0,
+   "link_to": "Calendar Exception",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Cuentas de agendamiento",
+   "link_count": 2,
    "link_type": "DocType",
    "onboard": 0,
    "type": "Card Break"
@@ -41,49 +99,9 @@
    "link_type": "DocType",
    "onboard": 0,
    "type": "Link"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Availability Plan",
-   "link_count": 0,
-   "link_to": "Availability Plan",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Calendar Resource",
-   "link_count": 0,
-   "link_to": "Calendar Resource",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Calendar Exception",
-   "link_count": 0,
-   "link_to": "Calendar Exception",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Appointment",
-   "link_count": 0,
-   "link_to": "Appointment",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
   }
  ],
- "modified": "2026-01-21 08:21:18.201115",
+ "modified": "2026-02-22 20:57:22.137680",
  "modified_by": "Administrator",
  "module": "Meet Scheduling",
  "name": "Meet Scheduling",

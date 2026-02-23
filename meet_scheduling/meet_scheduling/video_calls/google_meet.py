@@ -25,7 +25,6 @@ class GoogleMeetAdapter(VideoCallAdapter):
 		return {
 			"meeting_url": f"https://meet.google.com/mock-{appointment.name}",
 			"meeting_id": f"mock-{appointment.name}",
-			"provider_payload": {"mock": True}
 		}
 
 	def validate_profile(self, profile: Any) -> None:

@@ -7,95 +7,77 @@
  "engine": "InnoDB",
  "field_order": [
   "resource_name",
-  "resource_type",
-  "reference_doctype",
-  "reference_name",
   "timezone",
+  "is_active",
+  "scheduling_section",
   "slot_duration_minutes",
   "capacity",
   "draft_expiration_minutes",
   "availability_plan",
-  "video_call_profile",
-  "is_active"
+  "video_call_profile"
  ],
  "fields": [
   {
-   "description": "Nombre visible del calendario. Ej: Dr. Carlos G\u00f3mez",
+   "description": "Nombre visible del calendario. Ej: Dr. Carlos G\u00f3mez, Sala de Juntas",
    "fieldname": "resource_name",
    "fieldtype": "Data",
    "label": "Resource Name",
+   "reqd": 1,
    "unique": 1
   },
   {
-   "default": "Person",
-   "description": "Tipo de recurso. Ej: Person",
-   "fieldname": "resource_type",
-   "fieldtype": "Select",
-   "label": "Resource Type",
-   "options": "Person\nRoom\nEquipment\nService"
-  },
-  {
-   "description": "Doctype externo vinculado. Ej: Employee",
-   "fieldname": "reference_doctype",
-   "fieldtype": "Link",
-   "label": "Reference DocType",
-   "options": "DocType"
-  },
-  {
-   "description": "Registro espec\u00edfico vinculado. Ej: EMP-00045",
-   "fieldname": "reference_name",
-   "fieldtype": "Dynamic Link",
-   "label": "Reference Name",
-   "options": "reference_doctype"
-  },
-  {
-   "default": "system timezone",
-   "description": "Zona horaria del calendario. Ej: America/Bogota",
+   "default": "America/Bogota",
+   "description": "Zona horaria del calendario. Todas las citas se calculan en esta zona horaria",
    "fieldname": "timezone",
    "fieldtype": "Data",
    "label": "Timezone"
   },
   {
+   "default": "1",
+   "description": "Desmarcar para desactivar el agendamiento en este calendario",
+   "fieldname": "is_active",
+   "fieldtype": "Check",
+   "label": "Is Active"
+  },
+  {
+   "fieldname": "scheduling_section",
+   "fieldtype": "Section Break",
+   "label": "Scheduling Configuration"
+  },
+  {
    "default": "60",
-   "description": "Duraci\u00f3n m\u00ednima de cita",
+   "description": "Duraci\u00f3n de cada bloque de cita en minutos. Ej: 30 = citas de media hora",
    "fieldname": "slot_duration_minutes",
    "fieldtype": "Int",
    "label": "Slot Duration (Minutes)"
   },
   {
    "default": "1",
-   "description": "Citas simult\u00e1neas permitidas",
+   "description": "Cu\u00e1ntas citas pueden existir en el mismo horario. Ej: 1 = sin citas simult\u00e1neas",
    "fieldname": "capacity",
    "fieldtype": "Int",
    "label": "Capacity"
   },
   {
    "default": "15",
-   "description": "Tiempo en minutos antes de que un Draft expire y libere el horario",
+   "description": "Minutos que un borrador reserva el horario antes de expirar. Si el usuario no confirma en este tiempo, el slot se libera",
    "fieldname": "draft_expiration_minutes",
    "fieldtype": "Int",
    "label": "Draft Expiration (Minutes)"
   },
   {
-   "description": "Horario semanal asignado. Ej: Horario Consultorio 2026",
+   "description": "Plan de disponibilidad semanal. Define los d\u00edas y horarios en que se puede agendar",
    "fieldname": "availability_plan",
    "fieldtype": "Link",
    "label": "Availability Plan",
    "options": "Availability Plan"
   },
   {
-   "description": "Configuraci\u00f3n de videollamada usada",
+   "description": "Perfil de videollamada por defecto. Se hereda autom\u00e1ticamente a las citas creadas en este calendario",
    "fieldname": "video_call_profile",
    "fieldtype": "Link",
    "label": "Video Call Profile",
    "options": "Video Call Profile"
-  },
-  {
-   "default": "1",
-   "description": "Indica si se puede agendar",
-   "fieldname": "is_active",
-   "fieldtype": "Check",
-   "label": "Is Active"
   }
  ],
  "grid_page_length": 50,

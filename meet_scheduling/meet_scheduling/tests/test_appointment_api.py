@@ -25,8 +25,7 @@ class TestAppointmentAPI(unittest.TestCase):
 			resource = frappe.get_doc({
 				"doctype": "Calendar Resource",
 				"resource_name": "Test Resource API",
-				"resource_type": "Person",
-				"timezone": "America/Bogota",
+					"timezone": "America/Bogota",
 				"slot_duration_minutes": 60,
 				"capacity": 1,
 				"draft_expiration_minutes": 15,

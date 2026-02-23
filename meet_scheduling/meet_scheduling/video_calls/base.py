@@ -27,8 +27,7 @@ class VideoCallAdapter(ABC):
 		Returns:
 			dict: {
 				"meeting_url": str,
-				"meeting_id": str,
-				"provider_payload": dict (respuesta completa del API)
+				"meeting_id": str
 			}
 
 		Raises:

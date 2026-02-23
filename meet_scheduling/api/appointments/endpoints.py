@@ -11,7 +11,7 @@ All public endpoints allow guest access with security protections:
 
 import frappe
 from frappe import _
-from frappe.utils import get_datetime, getdate, now_datetime
+from frappe.utils import get_datetime, getdate
 from typing import Dict, List, Any, Optional
 import pytz
 
@@ -52,13 +52,12 @@ def get_active_calendar_resources() -> List[Dict[str, Any]]:
 		```json
 		[
 			{
-				"name": "CR-00001",
+				"name": "Dr. Juan Pérez",
 				"resource_name": "Dr. Juan Pérez",
-				"resource_type": "Person",
 				"timezone": "America/Bogota",
 				"slot_duration_minutes": 30,
 				"capacity": 1,
-				"video_call_profile": "VCP-00001"
+				"video_call_profile": "Google Meet - Consultas"
 			}
 		]
 		```
@@ -74,7 +73,6 @@ def get_active_calendar_resources() -> List[Dict[str, Any]]:
 			fields=[
 				"name",
 				"resource_name",
-				"resource_type",
 				"timezone",
 				"slot_duration_minutes",
 				"capacity",
@@ -565,11 +563,12 @@ def cancel_or_delete_appointment(appointment_name: str) -> Dict[str, Any]:
 @frappe.whitelist()
 def generate_meeting(appointment_name: str) -> Dict[str, Any]:
 	"""
-	Genera meeting manualmente (cuando create_on = manual).
+	Genera o re-genera un meeting para un appointment confirmado.
 
-	Este endpoint permite generar meetings bajo demanda, por ejemplo:
-	- Cuando el Video Call Profile tiene create_on = "manual"
-	- Cuando se quiere re-generar un meeting después de submit
+	Útil cuando:
+	- El meeting no se creó automáticamente al confirmar
+	- Se quiere re-generar un meeting después de un error
+	- El link_mode es auto_or_manual y se quiere forzar la creación automática
 
 	Args:
 		appointment_name: nombre del Appointment
@@ -616,10 +615,10 @@ def generate_meeting(appointment_name: str) -> Dict[str, Any]:
 		# Obtener profile
 		profile = frappe.get_doc("Video Call Profile", appointment.video_call_profile)
 
-		# Validar que el profile permite generación manual
-		if profile.create_on != "manual":
+		# Validar que el profile permite generación automática
+		if profile.link_mode == "manual_only":
 			frappe.throw(
-				_(f"El Video Call Profile tiene create_on = '{profile.create_on}'. Solo se puede usar este endpoint con create_on = 'manual'")
+				_("El Video Call Profile está en modo manual_only. Pega el enlace directamente en Meeting URL del appointment.")
 			)
 
 		# Obtener adapter
@@ -635,9 +634,6 @@ def generate_meeting(appointment_name: str) -> Dict[str, Any]:
 		appointment.meeting_url = result.get("meeting_url")
 		appointment.meeting_id = result.get("meeting_id")
 		appointment.meeting_status = "created"
-		appointment.video_provider = profile.provider
-		appointment.meeting_created_at = now_datetime()
-		appointment.provider_payload = frappe.as_json(result.get("provider_payload", {}))
 
 		# Guardar sin triggers (para evitar loops)
 		appointment.flags.ignore_validate = True
@@ -763,8 +759,7 @@ def get_my_appointments(
 					"appointment_context",
 					"meeting_url",
 					"meeting_status",
-					"video_provider",
-					"creation",
+						"creation",
 					"modified"
 				],
 				order_by="start_datetime desc",
@@ -784,8 +779,7 @@ def get_my_appointments(
 					"appointment_context",
 					"meeting_url",
 					"meeting_status",
-					"video_provider",
-					"creation",
+						"creation",
 					"modified"
 				],
 				order_by="start_datetime desc",
@@ -881,7 +875,6 @@ def get_appointment_detail(appointment_name: str) -> Dict[str, Any]:
 			"meeting_url": appointment.meeting_url,
 			"meeting_id": appointment.meeting_id,
 			"meeting_status": appointment.meeting_status,
-			"video_provider": appointment.video_provider,
 			"creation": str(appointment.creation),
 			"modified": str(appointment.modified)
 		}

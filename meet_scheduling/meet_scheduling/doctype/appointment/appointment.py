@@ -11,8 +11,7 @@ import frappe
 from frappe import _
 from frappe.model.document import Document
 from frappe.utils import now_datetime, add_to_date, get_datetime
-from datetime import datetime, timedelta
-from typing import Optional, Dict, Any
+from typing import Any
 
 # Import scheduling services
 from meet_scheduling.meet_scheduling.scheduling.overlap import check_overlap
@@ -60,8 +59,7 @@ class Appointment(Document):
 		1. Verificar que el Draft no haya expirado
 		2. Validación fuerte de disponibilidad
 		3. Validación fuerte de overlaps (bloquea si capacity exceeded)
-		4. Crear meeting si corresponde (auto)
-		5. Validar manual_meeting_url si es manual
+		4. Crear meeting si corresponde
 		"""
 		self._validate_draft_not_expired()
 		self._validate_availability_strict()
@@ -113,11 +111,18 @@ class Appointment(Document):
 	def _resolve_video_call_profile(self) -> None:
 		"""
 		Resuelve video_call_profile desde Calendar Resource si está vacío.
+		Si el perfil tiene default_meeting_url y la cita no tiene meeting_url, lo copia.
 		"""
 		if not self.video_call_profile and self.calendar_resource:
 			resource = frappe.get_doc("Calendar Resource", self.calendar_resource)
 			if resource.video_call_profile:
 				self.video_call_profile = resource.video_call_profile
+
+		# Copiar default_meeting_url del perfil si la cita no tiene uno
+		if self.video_call_profile and not self.meeting_url:
+			profile = frappe.get_cached_doc("Video Call Profile", self.video_call_profile)
+			if profile.default_meeting_url:
+				self.meeting_url = profile.default_meeting_url
 
 	def _calculate_draft_expiration(self) -> None:
 		"""
@@ -308,36 +313,26 @@ class Appointment(Document):
 		Crea meeting según configuración del profile.
 
 		Modos:
-		- auto_generate: crea automáticamente
-		- manual_only: requiere manual_meeting_url
-		- auto_or_manual: permite ambos
+		- auto_generate: crea automáticamente vía API
+		- manual_only: el usuario debe pegar meeting_url antes de confirmar
+		- auto_or_manual: si meeting_url ya tiene valor lo usa, si no crea automáticamente
 		"""
 		if not self.video_call_profile:
 			return
 
 		profile = frappe.get_doc("Video Call Profile", self.video_call_profile)
+		link_mode = profile.link_mode or "manual_only"
 
-		# Resolver modo efectivo
-		effective_mode = self._get_effective_link_mode(profile)
+		if link_mode == "manual_only":
+			if not self.meeting_url:
+				frappe.throw(_("Meeting URL es requerido para este perfil"))
 
-		if effective_mode == "manual_only":
-			# Requiere manual_meeting_url
-			if not self.manual_meeting_url:
-				frappe.throw(_("Manual Meeting URL es requerido para este perfil"))
-			self.meeting_url = self.manual_meeting_url
+		elif link_mode == "auto_generate":
+			self._create_meeting_via_adapter(profile)
 
-		elif effective_mode in ["auto_generate", "auto_or_manual"]:
-			# Verificar si ya existe meeting_url
-			if self.meeting_url and not self.manual_meeting_url:
-				# Ya tiene meeting auto-generado, no crear otro
-				return
-
-			# Crear meeting automáticamente si create_on = on_submit
-			if profile.create_on == "on_submit":
+		elif link_mode == "auto_or_manual":
+			if not self.meeting_url:
 				self._create_meeting_via_adapter(profile)
-			elif self.manual_meeting_url:
-				# Si tiene manual_meeting_url en modo auto_or_manual
-				self.meeting_url = self.manual_meeting_url
 
 	def _create_meeting_via_adapter(self, profile: Any) -> None:
 		"""Crea meeting usando el adapter del proveedor."""
@@ -354,9 +349,6 @@ class Appointment(Document):
 			self.meeting_url = result.get("meeting_url")
 			self.meeting_id = result.get("meeting_id")
 			self.meeting_status = "created"
-			self.video_provider = profile.provider
-			self.meeting_created_at = now_datetime()
-			self.provider_payload = frappe.as_json(result.get("provider_payload", {}))
 
 			frappe.msgprint(
 				_(f"Meeting creado: {self.meeting_url}"),
@@ -365,8 +357,10 @@ class Appointment(Document):
 			)
 
 		except VideoCallError as e:
+			self.meeting_status = "failed"
 			frappe.throw(_(f"Error al crear meeting: {str(e)}"))
 		except Exception as e:
+			self.meeting_status = "failed"
 			frappe.log_error(f"Error creating meeting: {str(e)}", "Appointment Meeting Creation")
 			frappe.throw(_(f"Error inesperado al crear meeting: {str(e)}"))
 
@@ -406,7 +400,7 @@ class Appointment(Document):
 			return
 
 		# Solo si tiene meeting_id (auto-generado)
-		if not self.meeting_id or self.manual_meeting_url:
+		if not self.meeting_id:
 			return
 
 		# Detectar cambio de horario
@@ -445,16 +439,3 @@ class Appointment(Document):
 					alert=True
 				)
 
-	def _get_effective_link_mode(self, profile: Any) -> str:
-		"""
-		Determina el modo efectivo de link según profile y appointment.
-
-		Returns:
-			"auto_generate" | "manual_only" | "auto_or_manual"
-		"""
-		# Si appointment tiene call_link_mode != "inherit", usar ese
-		if self.call_link_mode and self.call_link_mode != "inherit":
-			return self.call_link_mode
-
-		# Caso contrario, usar del profile
-		return profile.link_mode or "manual_only"

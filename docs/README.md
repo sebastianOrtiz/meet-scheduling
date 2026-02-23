@@ -52,26 +52,25 @@ Responsabilidades lógicas:
 2.5 Video Call Profile
 
 Qué es: perfil reutilizable para definir cómo se crea (o se pega) el enlace.
+Campos: `profile_name` (reqd), `is_active`, `provider` (reqd), `link_mode` (reqd, default: manual_only), `provider_account` (condicional), `meeting_title_template` (condicional).
 Responsabilidades lógicas:
 	•	Proveedor (google_meet / microsoft_teams)
 	•	Modo de enlace:
+	•	manual_only (default)
 	•	auto_generate
-	•	manual_only
 	•	auto_or_manual (con fallback manual)
-	•	Cuándo crear:
-	•	on_submit recomendado
-	•	manual (solo si el usuario presiona botón)
-	•	Plantillas para título/descripcion (si auto)
+	•	Sección de auto-configuración solo visible cuando link_mode !== 'manual_only'
 	•	Cuenta (Provider Account) si auto
 
 2.6 Provider Account
 
-Qué es: credenciales para crear meetings por API.
+Qué es: credenciales OAuth para crear meetings por API.
+Campos: `account_name`, `provider`, `status` (default: Pending), `client_id`, `client_secret` (Password), `access_token` (read_only), `refresh_token` (read_only), `token_expires_at`, `scopes`.
+Secciones: "Credenciales OAuth", "Tokens" (read_only), "Guía de Configuración" (HTML con guías para Google Meet y Microsoft Teams).
 Responsabilidades lógicas:
-	•	Estado: Connected/Expired/Revoked
-	•	Guardar tokens de forma segura
+	•	Estado: Pending (default) / Connected / Expired / Revoked
+	•	Guardar credenciales OAuth y tokens de forma segura
 	•	Facilitar refresh token (si aplica)
-	•	(Opcional futuro) Soportar service_account
 
 ⸻
 
@@ -101,20 +100,19 @@ Resultado: el sistema puede calcular “slots disponibles” para un rango de fe
 
 3.3 Videollamada: manual vs automática
 
-Manual
-	•	call_link_mode = manual o perfil manual_only.
-	•	Usuario pega manual_meeting_url.
-	•	El sistema copia a meeting_url como enlace final.
+El modo se determina por `link_mode` del Video Call Profile vinculado.
 
-Auto
-	•	call_link_mode = auto o perfil con auto.
-	•	En on_submit (recomendado):
-	•	se crea meeting vía adapter
-	•	se llena meeting_url, meeting_id, provider_payload, meeting_status
+Manual (`manual_only`)
+	•	Usuario pega el enlace directamente en meeting_url.
+	•	Se requiere antes de confirmar (submit).
 
-Auto con fallback manual
-	•	perfil auto_or_manual + require_manual_if_auto_fails = 1
-	•	si falla creación: se deja meeting_status=failed y se permite pegar manual.
+Auto (`auto_generate`)
+	•	En on_submit: se crea meeting vía adapter (factory pattern).
+	•	Se llena meeting_url, meeting_id, meeting_status.
+
+Auto o Manual (`auto_or_manual`)
+	•	Si meeting_url ya tiene valor, se usa tal cual.
+	•	Si no, se crea automáticamente en on_submit.
 
 ⸻
 
@@ -191,18 +189,14 @@ validate
 	•	slot granularity (si aplica)
 	•	Resolver video_call_profile snapshot si está vacío:
 	•	si Appointment.video_call_profile vacío -> tomar de Calendar Resource
-	•	Resolver modo efectivo:
-	•	call_link_mode (inherit/manual/auto) + profile.link_mode
-
 before_submit / on_submit (recomendado on_submit)
 	•	Validación fuerte final:
 	•	disponibilidad efectiva
 	•	overlaps según capacidad y status
-	•	Crear videollamada si corresponde:
-	•	si modo efectivo incluye auto y create_on = on_submit
-	•	Si modo efectivo es manual:
-	•	exigir manual_meeting_url para pasar a Confirmed/Submit (según tu flujo)
-	•	copiar manual_meeting_url -> meeting_url
+	•	Crear videollamada según link_mode del Video Call Profile:
+	•	manual_only: exigir meeting_url ya llenado
+	•	auto_generate: crear vía adapter
+	•	auto_or_manual: si meeting_url vacío, crear vía adapter
 
 on_cancel
 	•	Si meeting fue creado por API:
@@ -276,20 +270,19 @@ factory.get_adapter(profile.provider) devuelve:
 
 9.3 Reglas para crear link
 
-Resolver modo efectivo
-	•	effective_mode = (Appointment.call_link_mode != inherit) ? appointment : profile.link_mode
+El modo se lee del `link_mode` del Video Call Profile vinculado al Appointment.
 
-Auto
+Auto (`auto_generate`)
 	•	Requiere provider_account conectada y con tokens válidos
 	•	Si provider_account.status != Connected → falla
-	•	Si falla:
-	•	si profile.link_mode = auto_or_manual y require_manual_if_auto_fails=1:
-	•	marcar meeting_status=failed + permitir manual
-	•	si no → lanzar error
+	•	Si falla → lanzar error y marcar meeting_status=failed
 
-Manual
-	•	Exigir manual_meeting_url (en submit/confirm)
-	•	Copiar a meeting_url
+Manual (`manual_only`)
+	•	Exigir meeting_url ya llenado antes de submit
+
+Auto o Manual (`auto_or_manual`)
+	•	Si meeting_url ya tiene valor, se usa
+	•	Si no, se crea automáticamente vía adapter
 
 9.4 Idempotencia (evitar duplicados)
 	•	Si meeting_id ya existe y meeting_status=created, no volver a crear.
@@ -325,7 +318,7 @@ Para frontend/UI o integración:
 
 	3.	generate_meeting(appointment_name)
 
-	•	Solo si create_on=manual o reintentos tras falla.
+	•	Para generación manual o reintentos tras falla.
 
 ⸻
 
@@ -340,8 +333,8 @@ Recomendación práctica:
 	•	disponibilidad
 	•	no solapes
 	•	Videollamada:
-	•	si manual → manual_meeting_url requerido
-	•	si auto → debe quedar meeting_status=created o permitir fallback manual
+	•	si manual_only → meeting_url requerido
+	•	si auto → debe quedar meeting_status=created
 
 ⸻
 
@@ -380,7 +373,7 @@ Está listo cuando:
 	•	auto_generate
 	•	manual_only
 	•	auto_or_manual con fallback
-	•	Logs/errores claros: meeting_error útil para soporte.
+	•	Logs/errores claros: errores se registran vía frappe.log_error.
 	•	Tokens protegidos y permisos aplicados.
 
 ⸻

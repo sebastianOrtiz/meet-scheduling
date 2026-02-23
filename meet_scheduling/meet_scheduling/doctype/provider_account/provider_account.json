@@ -8,17 +8,21 @@
  "field_order": [
   "account_name",
   "provider",
-  "owner_user",
   "status",
-  "auth_mode",
+  "oauth_credentials_section",
+  "client_id",
+  "client_secret",
+  "tokens_section",
   "access_token",
   "refresh_token",
   "token_expires_at",
-  "scopes"
+  "scopes",
+  "setup_guide_section",
+  "setup_guide_html"
  ],
  "fields": [
   {
-   "description": "Nombre amigable de la cuenta. Ej: Google - Consultas Dr. G\u00f3mez",
+   "description": "Nombre descriptivo de la cuenta. Ej: Google Meet - Consultas, Teams - Empresa",
    "fieldname": "account_name",
    "fieldtype": "Data",
    "in_list_view": 1,
@@ -28,57 +32,84 @@
   },
   {
    "default": "google_meet",
-   "description": "Proveedor de videollamada. Ej: google_meet\n",
+   "description": "Proveedor de videollamada. Selecciona el servicio donde se crear\u00e1n las reuniones autom\u00e1ticamente",
    "fieldname": "provider",
    "fieldtype": "Select",
+   "in_list_view": 1,
    "label": "Provider",
-   "options": "google_meet\nmicrosoft_teams"
+   "options": "google_meet\nmicrosoft_teams",
+   "reqd": 1
   },
   {
-   "description": "Usuario que autoriz\u00f3 la cuenta. Ej: andrea@empresa.com",
-   "fieldname": "owner_user",
-   "fieldtype": "Link",
-   "label": "Owner User",
-   "options": "User"
-  },
-  {
-   "default": "Connected",
-   "description": "Estado de la conexi\u00f3n. Ej: Connected\n",
+   "default": "Pending",
+   "description": "Estado actual de la conexi\u00f3n con el proveedor",
    "fieldname": "status",
    "fieldtype": "Select",
+   "in_list_view": 1,
    "label": "Status",
-   "options": "Connected\nExpired\nRevoked"
+   "options": "Pending\nConnected\nExpired\nRevoked",
+   "read_only": 1
   },
   {
-   "default": "oauth_user",
-   "fieldname": "auth_mode",
-   "fieldtype": "Select",
-   "label": "Auth Mode",
-   "options": "oauth_user\nservice_account\nmanual_link"
+   "fieldname": "oauth_credentials_section",
+   "fieldtype": "Section Break",
+   "label": "OAuth Credentials"
   },
   {
-   "description": "Token de acceso API. Ej: ya29.a0AfH6\u2026\n",
+   "description": "Client ID de la aplicaci\u00f3n OAuth.\n\n**Google Meet:** Obt\u00e9nlo en Google Cloud Console > APIs & Services > Credentials > Create OAuth Client ID\n**Microsoft Teams:** Obt\u00e9nlo en Azure Portal > App Registrations > Tu App > Application (client) ID",
+   "fieldname": "client_id",
+   "fieldtype": "Data",
+   "label": "Client ID"
+  },
+  {
+   "description": "Client Secret de la aplicaci\u00f3n OAuth.\n\n**Google Meet:** En la misma pantalla de Credentials, copia el Client Secret\n**Microsoft Teams:** En Azure Portal > Certificates & Secrets > New Client Secret",
+   "fieldname": "client_secret",
+   "fieldtype": "Password",
+   "label": "Client Secret"
+  },
+  {
+   "fieldname": "tokens_section",
+   "fieldtype": "Section Break",
+   "label": "Tokens"
+  },
+  {
+   "description": "Token de acceso a la API del proveedor. Se obtiene autom\u00e1ticamente durante el flujo OAuth",
    "fieldname": "access_token",
    "fieldtype": "Password",
-   "label": "Access Token"
+   "label": "Access Token",
+   "read_only": 1
   },
   {
-   "description": "Token para renovar acceso. Ej: 1//0gL8k\u2026\n",
+   "description": "Token para renovar el acceso cuando expire. Se obtiene autom\u00e1ticamente durante el flujo OAuth",
    "fieldname": "refresh_token",
    "fieldtype": "Password",
-   "label": "Refresh Token"
+   "label": "Refresh Token",
+   "read_only": 1
   },
   {
-   "description": "Fecha de expiraci\u00f3n. Ej: 2026-01-08 15:30\n",
+   "description": "Fecha y hora en que expira el Access Token. El sistema renueva autom\u00e1ticamente usando el Refresh Token",
    "fieldname": "token_expires_at",
    "fieldtype": "Datetime",
-   "label": "Token Expires At"
+   "label": "Token Expires At",
+   "read_only": 1
   },
   {
-   "description": "Permisos otorgados. Ej: calendar.events\n",
+   "description": "Permisos OAuth otorgados por el proveedor",
    "fieldname": "scopes",
    "fieldtype": "Small Text",
-   "label": "Scopes"
+   "label": "Scopes",
+   "read_only": 1
+  },
+  {
+   "fieldname": "setup_guide_section",
+   "fieldtype": "Section Break",
+   "label": "Configuration Guide"
+  },
+  {
+   "fieldname": "setup_guide_html",
+   "fieldtype": "HTML",
+   "label": "Setup Guide",
+   "options": "<div style='padding: 15px; background: #f5f7fa; border-radius: 8px; font-size: 13px;'><h4>\ud83d\udcd6 Google Meet</h4><ol><li>Ir a <a href='https://console.cloud.google.com/' target='_blank'>Google Cloud Console</a></li><li>Crear un proyecto nuevo o seleccionar uno existente</li><li>Activar la <strong>Google Calendar API</strong> en APIs & Services > Library</li><li>Ir a APIs & Services > Credentials > Create Credentials > OAuth Client ID</li><li>Tipo: <strong>Web Application</strong></li><li>En Authorized redirect URIs agregar: <code>https://tu-sitio.com/api/method/meet_scheduling.integrations.google_callback</code></li><li>Copiar el <strong>Client ID</strong> y <strong>Client Secret</strong> en los campos de arriba</li><li>Scopes necesarios: <code>https://www.googleapis.com/auth/calendar.events</code></li></ol><hr/><h4>\ud83d\udcd6 Microsoft Teams</h4><ol><li>Ir a <a href='https://portal.azure.com/#blade/Microsoft_AAD_RegisteredApps/ApplicationsListBlade' target='_blank'>Azure Portal > App Registrations</a></li><li>Click en <strong>New Registration</strong></li><li>Nombre: ej. 'Nexora Meet Scheduling'</li><li>Supported account types: <strong>Accounts in this organizational directory only</strong></li><li>Redirect URI: Web > <code>https://tu-sitio.com/api/method/meet_scheduling.integrations.microsoft_callback</code></li><li>En <strong>API Permissions</strong> agregar: <code>OnlineMeetings.ReadWrite</code> y <code>Calendars.ReadWrite</code></li><li>En <strong>Certificates & Secrets</strong> crear un nuevo Client Secret</li><li>Copiar <strong>Application (client) ID</strong> y el <strong>Secret Value</strong> en los campos de arriba</li></ol></div>"
   }
  ],
  "grid_page_length": 50,

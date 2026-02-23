@@ -25,7 +25,6 @@ class TeamsAdapter(VideoCallAdapter):
 		return {
 			"meeting_url": f"https://teams.microsoft.com/mock-{appointment.name}",
 			"meeting_id": f"teams-mock-{appointment.name}",
-			"provider_payload": {"mock": True}
 		}
 
 	def validate_profile(self, profile: Any) -> None:
