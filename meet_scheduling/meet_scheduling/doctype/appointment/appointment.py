@@ -60,6 +60,7 @@ class Appointment(Document):
 		2. Validación fuerte de disponibilidad
 		3. Validación fuerte de overlaps (bloquea si capacity exceeded)
 		4. Crear meeting si corresponde
+		5. Encolar notificación por email (asíncrono, tras commitear la transacción)
 		"""
 		self._validate_draft_not_expired()
 		self._validate_availability_strict()
@@ -67,6 +68,35 @@ class Appointment(Document):
 		self._handle_meeting_creation()
 		self.status = "Confirmed"
 		self.db_set("status", "Confirmed", update_modified=False)
+		self._enqueue_email_notification()
+
+	def _enqueue_email_notification(self) -> None:
+		"""Enqueue email notification and warn if outgoing email is not configured."""
+		from meet_scheduling.meet_scheduling.notifications.appointment import has_outgoing_email
+
+		resource = frappe.get_cached_doc("Calendar Resource", self.calendar_resource)
+		if not resource.send_email_notification:
+			return
+
+		if not has_outgoing_email():
+			frappe.msgprint(
+				_(
+					"La cita fue confirmada, pero <strong>no hay servidor de email saliente configurado</strong> "
+					"en Frappe. No se enviará ninguna notificación.<br><br>"
+					"Para habilitarlas ve a <a href='/app/email-account'>Email Account</a> "
+					"y activa una cuenta con <em>Enable Outgoing</em>."
+				),
+				title=_("Notificación de email no enviada"),
+				indicator="orange",
+			)
+			return
+
+		frappe.enqueue(
+			"meet_scheduling.meet_scheduling.notifications.appointment.send_appointment_notification",
+			appointment_name=self.name,
+			queue="default",
+			enqueue_after_commit=True,
+		)
 
 	def on_cancel(self) -> None:
 		"""
