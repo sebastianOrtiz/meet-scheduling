@@ -30,6 +30,20 @@ fixtures = [
 
 required_apps = ["common_configurations"]
 
+# Appointment Notification Hooks
+# --------------------------------
+# Other apps can extend appointment email notifications by registering
+# functions that return additional context (dict) or recipients (list of emails).
+#
+# appointment_email_context hooks receive the Appointment doc and return a dict
+# that gets merged into the email template context.
+#
+# appointment_email_recipients hooks receive the Appointment doc and return a
+# list of email addresses to add to the notification recipients.
+
+appointment_email_context = []
+appointment_email_recipients = []
+
 # Each item in the list will be shown as an app in the apps page
 # add_to_apps_screen = [
 # 	{
