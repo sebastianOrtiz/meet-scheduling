@@ -14,7 +14,10 @@
   "capacity",
   "draft_expiration_minutes",
   "availability_plan",
-  "video_call_profile"
+  "video_call_profile",
+  "notifications_section",
+  "send_email_notification",
+  "notification_users"
  ],
  "fields": [
   {
@@ -78,6 +81,26 @@
    "fieldtype": "Link",
    "label": "Video Call Profile",
    "options": "Video Call Profile"
+  },
+  {
+   "fieldname": "notifications_section",
+   "fieldtype": "Section Break",
+   "label": "Notifications"
+  },
+  {
+   "default": "0",
+   "description": "Al confirmar una cita, enviar email a los usuarios configurados en la tabla de abajo",
+   "fieldname": "send_email_notification",
+   "fieldtype": "Check",
+   "label": "Send Email Notification"
+  },
+  {
+   "depends_on": "eval:doc.send_email_notification == 1",
+   "description": "Usuarios que recibirán un email al confirmarse una cita en este calendario",
+   "fieldname": "notification_users",
+   "fieldtype": "Table",
+   "label": "Notification Users",
+   "options": "Calendar Resource Notification User"
   }
  ],
  "grid_page_length": 50,
