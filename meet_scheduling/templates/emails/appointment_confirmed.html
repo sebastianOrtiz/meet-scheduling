@@ -1,0 +1,242 @@
+<!-- Wrapper -->
+<table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f3f4f6; padding: 32px 16px;">
+  <tr>
+    <td align="center">
+      <table width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px; width:100%; background:#ffffff; border-radius:8px; overflow:hidden; box-shadow:0 1px 4px rgba(0,0,0,0.08);">
+
+        <!-- Header -->
+        <tr>
+          <td style="background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%); padding: 32px 40px; text-align:center;">
+            <p style="margin:0 0 6px 0; font-family:Arial,sans-serif; font-size:11px; font-weight:600; letter-spacing:2px; text-transform:uppercase; color:#bfdbfe;">Confirmación de Cita</p>
+            <h1 style="margin:0; font-family:Arial,sans-serif; font-size:26px; font-weight:700; color:#ffffff; line-height:1.2;">{{ calendar_resource }}</h1>
+          </td>
+        </tr>
+
+        <!-- Status badge -->
+        <tr>
+          <td style="padding: 0 40px;">
+            <table width="100%" cellpadding="0" cellspacing="0">
+              <tr>
+                <td style="padding: 20px 0; border-bottom: 1px solid #e5e7eb;">
+                  <table cellpadding="0" cellspacing="0">
+                    <tr>
+                      <td style="background:#dcfce7; border-radius:20px; padding:6px 16px;">
+                        <span style="font-family:Arial,sans-serif; font-size:13px; font-weight:600; color:#16a34a;">&#10003;&nbsp; Cita Confirmada</span>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- Body -->
+        <tr>
+          <td style="padding: 28px 40px 0 40px;">
+
+            <!-- Greeting -->
+            <p style="margin:0 0 24px 0; font-family:Arial,sans-serif; font-size:15px; color:#374151; line-height:1.6;">
+              Se ha confirmado una nueva cita para <strong>{{ contact_name }}</strong>. A continuación encontrará todos los detalles.
+            </p>
+
+            <!-- Appointment details card -->
+            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f8fafc; border-radius:6px; border:1px solid #e2e8f0; margin-bottom:24px;">
+
+              <!-- Date/time row - highlighted -->
+              <tr>
+                <td style="padding: 16px 20px; border-bottom:1px solid #e2e8f0;">
+                  <table width="100%" cellpadding="0" cellspacing="0">
+                    <tr>
+                      <td style="width:20px; vertical-align:top; padding-top:1px;">
+                        <span style="font-size:16px;">&#128197;</span>
+                      </td>
+                      <td style="padding-left:10px;">
+                        <p style="margin:0; font-family:Arial,sans-serif; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:1px; color:#64748b;">Fecha y hora</p>
+                        <p style="margin:4px 0 0 0; font-family:Arial,sans-serif; font-size:16px; font-weight:700; color:#0f172a;">{{ start_datetime }}</p>
+                        <p style="margin:2px 0 0 0; font-family:Arial,sans-serif; font-size:13px; color:#64748b;">Hasta las {{ end_datetime }}</p>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+
+              <!-- Contact row -->
+              <tr>
+                <td style="padding: 14px 20px; border-bottom:1px solid #e2e8f0;">
+                  <table width="100%" cellpadding="0" cellspacing="0">
+                    <tr>
+                      <td style="width:20px; vertical-align:middle;">
+                        <span style="font-size:15px;">&#128100;</span>
+                      </td>
+                      <td style="padding-left:10px;">
+                        <p style="margin:0; font-family:Arial,sans-serif; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:1px; color:#64748b;">Contacto / Paciente</p>
+                        <p style="margin:4px 0 0 0; font-family:Arial,sans-serif; font-size:14px; color:#1e293b; font-weight:500;">{{ contact_name }}</p>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+
+              <!-- Calendar resource row -->
+              <tr>
+                <td style="padding: 14px 20px; {% if not appointment_context %}{% else %}border-bottom:1px solid #e2e8f0;{% endif %}">
+                  <table width="100%" cellpadding="0" cellspacing="0">
+                    <tr>
+                      <td style="width:20px; vertical-align:middle;">
+                        <span style="font-size:15px;">&#128197;</span>
+                      </td>
+                      <td style="padding-left:10px;">
+                        <p style="margin:0; font-family:Arial,sans-serif; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:1px; color:#64748b;">Recurso / Calendario</p>
+                        <p style="margin:4px 0 0 0; font-family:Arial,sans-serif; font-size:14px; color:#1e293b; font-weight:500;">{{ calendar_resource }}</p>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+
+              {% if appointment_context %}
+              <!-- Context row -->
+              <tr>
+                <td style="padding: 14px 20px;">
+                  <table width="100%" cellpadding="0" cellspacing="0">
+                    <tr>
+                      <td style="width:20px; vertical-align:top; padding-top:2px;">
+                        <span style="font-size:15px;">&#128172;</span>
+                      </td>
+                      <td style="padding-left:10px;">
+                        <p style="margin:0; font-family:Arial,sans-serif; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:1px; color:#64748b;">Motivo / Contexto</p>
+                        <p style="margin:4px 0 0 0; font-family:Arial,sans-serif; font-size:14px; color:#1e293b; line-height:1.5;">{{ appointment_context }}</p>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+              {% endif %}
+
+            </table>
+
+            <!-- Video call CTA -->
+            {% if meeting_url %}
+            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:24px;">
+              <tr>
+                <td style="background:#eff6ff; border-radius:6px; border:1px solid #bfdbfe; padding:16px 20px;">
+                  <table width="100%" cellpadding="0" cellspacing="0">
+                    <tr>
+                      <td style="vertical-align:middle;">
+                        <span style="font-size:15px;">&#127909;</span>
+                        <span style="font-family:Arial,sans-serif; font-size:14px; font-weight:600; color:#1e40af; margin-left:8px;">Enlace de videollamada</span>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style="padding-top:12px; text-align:center;">
+                        <a href="{{ meeting_url }}"
+                           style="display:inline-block; background:#1d4ed8; color:#ffffff; font-family:Arial,sans-serif; font-size:14px; font-weight:600; text-decoration:none; padding:10px 28px; border-radius:6px; letter-spacing:0.3px;">
+                          Unirse a la videollamada
+                        </a>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style="padding-top:8px; text-align:center;">
+                        <a href="{{ meeting_url }}" style="font-family:Arial,sans-serif; font-size:11px; color:#6b7280; word-break:break-all;">{{ meeting_url }}</a>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+            {% endif %}
+
+            <!-- Case Log section -->
+            {% if case_log_name %}
+            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:24px;">
+              <tr>
+                <td style="background:#fefce8; border-radius:6px; border:1px solid #fde68a; padding:16px 20px;">
+
+                  <p style="margin:0 0 12px 0; font-family:Arial,sans-serif; font-size:13px; font-weight:700; color:#92400e; text-transform:uppercase; letter-spacing:1px;">
+                    &#9878;&nbsp; Caso Legal Creado Automáticamente
+                  </p>
+
+                  <table width="100%" cellpadding="0" cellspacing="0">
+                    <tr>
+                      <td style="padding:5px 0; width:45%;">
+                        <span style="font-family:Arial,sans-serif; font-size:12px; color:#78350f; font-weight:600;">Número de caso</span>
+                      </td>
+                      <td style="padding:5px 0;">
+                        <span style="font-family:Arial,sans-serif; font-size:13px; color:#1c1917; font-weight:700;">{{ case_log_name }}</span>
+                      </td>
+                    </tr>
+                    {% if case_log_title %}
+                    <tr>
+                      <td style="padding:5px 0;">
+                        <span style="font-family:Arial,sans-serif; font-size:12px; color:#78350f; font-weight:600;">Título</span>
+                      </td>
+                      <td style="padding:5px 0;">
+                        <span style="font-family:Arial,sans-serif; font-size:13px; color:#1c1917;">{{ case_log_title }}</span>
+                      </td>
+                    </tr>
+                    {% endif %}
+                    {% if assigned_lawyer_name %}
+                    <tr>
+                      <td style="padding:5px 0;">
+                        <span style="font-family:Arial,sans-serif; font-size:12px; color:#78350f; font-weight:600;">Abogado asignado</span>
+                      </td>
+                      <td style="padding:5px 0;">
+                        <span style="font-family:Arial,sans-serif; font-size:13px; color:#1c1917; font-weight:600;">{{ assigned_lawyer_name }}</span>
+                      </td>
+                    </tr>
+                    {% endif %}
+                  </table>
+
+                  {% if case_log_url %}
+                  <table width="100%" cellpadding="0" cellspacing="0" style="margin-top:14px;">
+                    <tr>
+                      <td>
+                        <a href="{{ case_log_url }}" target="_blank"
+                           style="display:inline-block; background:#b45309; color:#ffffff; font-family:Arial,sans-serif; font-size:13px; font-weight:600; text-decoration:none; padding:8px 20px; border-radius:5px;">
+                          Abrir Caso &rarr;
+                        </a>
+                      </td>
+                    </tr>
+                  </table>
+                  {% endif %}
+
+                </td>
+              </tr>
+            </table>
+            {% endif %}
+
+            <!-- Action buttons -->
+            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:8px;">
+              <tr>
+                <td style="padding-bottom:6px;">
+                  <p style="margin:0 0 10px 0; font-family:Arial,sans-serif; font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:1px; color:#94a3b8;">Acceso rápido</p>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <a href="{{ appointment_url }}" target="_blank"
+                     style="display:inline-block; background:#0f172a; color:#ffffff; font-family:Arial,sans-serif; font-size:13px; font-weight:600; text-decoration:none; padding:9px 22px; border-radius:5px;">
+                    Ver Cita en el Sistema &rarr;
+                  </a>
+                </td>
+              </tr>
+            </table>
+
+          </td>
+        </tr>
+
+        <!-- Footer -->
+        <tr>
+          <td style="padding: 24px 40px 32px 40px; border-top:1px solid #f1f5f9; margin-top:8px;">
+            <p style="margin:0; font-family:Arial,sans-serif; font-size:12px; color:#94a3b8; line-height:1.6; text-align:center;">
+              Este mensaje fue generado automáticamente — por favor no responda a este correo.<br>
+              <span style="color:#cbd5e1;">Referencia: {{ appointment_name }}</span>
+            </p>
+          </td>
+        </tr>
+
+      </table>
+    </td>
+  </tr>
+</table>
