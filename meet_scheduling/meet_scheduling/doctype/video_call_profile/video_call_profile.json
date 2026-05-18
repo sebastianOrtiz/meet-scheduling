@@ -34,20 +34,21 @@
   },
   {
    "default": "google_meet",
-   "description": "Proveedor de videollamada.\n- google_meet: Google Meet (requiere cuenta Google Workspace)\n- microsoft_teams: Microsoft Teams (requiere cuenta Microsoft 365)",
+   "description": "Proveedor de videollamada. La integraci\u00f3n autom\u00e1tica est\u00e1 deshabilitada por ahora; este campo se mantiene para uso futuro.",
    "fieldname": "provider",
    "fieldtype": "Select",
+   "hidden": 1,
    "label": "Provider",
-   "options": "google_meet\nmicrosoft_teams",
-   "reqd": 1
+   "options": "google_meet\nmicrosoft_teams"
   },
   {
    "default": "manual_only",
-   "description": "C\u00f3mo se obtiene el enlace de la reuni\u00f3n:\n- manual_only: Se usa el enlace fijo configurado abajo (Default Meeting URL). Se copia autom\u00e1ticamente a cada cita\n- auto_generate: El sistema crea un enlace nuevo autom\u00e1ticamente para cada cita v\u00eda API del proveedor (requiere Provider Account)\n- auto_or_manual: Si la cita ya tiene enlace se usa ese, si no se crea autom\u00e1ticamente",
+   "description": "C\u00f3mo se obtiene el enlace de la reuni\u00f3n. Actualmente solo se soporta el modo manual (se usa el enlace configurado abajo).",
    "fieldname": "link_mode",
    "fieldtype": "Select",
    "label": "Link Mode",
-   "options": "manual_only\nauto_generate\nauto_or_manual",
+   "options": "manual_only",
+   "read_only": 1,
    "reqd": 1
   },
   {

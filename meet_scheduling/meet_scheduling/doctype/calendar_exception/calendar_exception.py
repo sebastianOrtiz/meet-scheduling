@@ -63,14 +63,23 @@ class CalendarException(Document):
 
 	def _validate_extra_availability(self) -> None:
 		"""
-		Valida que Extra Availability tenga start_time y end_time.
-		No tiene sentido agregar disponibilidad extra sin especificar el rango.
+		Valida que Extra Availability y Blocked tengan start_time y end_time.
+		- Extra Availability: no tiene sentido agregar disponibilidad sin rango.
+		- Blocked: sin horarios la excepción se ignora silenciosamente en el
+		  cálculo de disponibilidad. Para cerrar todo el día se debe usar Closed.
 		"""
 		if self.exception_type == "Extra Availability":
 			if not self.start_time:
 				frappe.throw(_("Extra Availability requiere Start Time"))
 			if not self.end_time:
 				frappe.throw(_("Extra Availability requiere End Time"))
+
+		if self.exception_type == "Blocked":
+			if not self.start_time or not self.end_time:
+				frappe.throw(
+					_("Blocked requiere Start Time y End Time. "
+					  "Para cerrar todo el día usa el tipo 'Closed'.")
+				)
 
 	def _check_duplicate_exceptions(self) -> None:
 		"""

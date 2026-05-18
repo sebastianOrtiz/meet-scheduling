@@ -68,35 +68,78 @@ class Appointment(Document):
 		self._handle_meeting_creation()
 		self.status = "Confirmed"
 		self.db_set("status", "Confirmed", update_modified=False)
-		self._enqueue_email_notification()
+		self._enqueue_email_notification(event_type="confirmed")
 
-	def _enqueue_email_notification(self) -> None:
-		"""Enqueue email notification and warn if outgoing email is not configured."""
-		from meet_scheduling.meet_scheduling.notifications.appointment import has_outgoing_email
+	def _enqueue_email_notification(
+		self,
+		event_type: str = "confirmed",
+		previous_start_datetime=None,
+		previous_end_datetime=None,
+	) -> None:
+		"""
+		Encola un email de notificación para un evento del ciclo de vida.
+
+		Args:
+			event_type: confirmed, cancelled, rescheduled, reminder
+			previous_start_datetime: solo para rescheduled
+			previous_end_datetime: solo para rescheduled
+		"""
+		from common_configurations.api.shared import has_outgoing_email
 
 		resource = frappe.get_cached_doc("Calendar Resource", self.calendar_resource)
 		if not resource.send_email_notification:
 			return
 
 		if not has_outgoing_email():
-			frappe.msgprint(
-				_(
-					"La cita fue confirmada, pero <strong>no hay servidor de email saliente configurado</strong> "
-					"en Frappe. No se enviará ninguna notificación.<br><br>"
-					"Para habilitarlas ve a <a href='/app/email-account'>Email Account</a> "
-					"y activa una cuenta con <em>Enable Outgoing</em>."
-				),
-				title=_("Notificación de email no enviada"),
-				indicator="orange",
-			)
+			# Solo avisar visualmente cuando es la confirmación inicial
+			if event_type == "confirmed":
+				frappe.msgprint(
+					_(
+						"La cita fue confirmada, pero <strong>no hay servidor de email saliente configurado</strong> "
+						"en Frappe. No se enviará ninguna notificación.<br><br>"
+						"Para habilitarlas ve a <a href='/app/email-account'>Email Account</a> "
+						"y activa una cuenta con <em>Enable Outgoing</em>."
+					),
+					title=_("Notificación de email no enviada"),
+					indicator="orange",
+				)
 			return
 
 		frappe.enqueue(
 			"meet_scheduling.meet_scheduling.notifications.appointment.send_appointment_notification",
 			appointment_name=self.name,
+			event_type=event_type,
+			previous_start_datetime=str(previous_start_datetime) if previous_start_datetime else None,
+			previous_end_datetime=str(previous_end_datetime) if previous_end_datetime else None,
 			queue="default",
 			enqueue_after_commit=True,
 		)
+
+	def _notify_on_time_change(self) -> None:
+		"""
+		Detecta cambio en start_datetime o end_datetime de una cita Confirmed
+		y encola el email de reagendamiento.
+		"""
+		if self.is_new():
+			return
+		if self.status != "Confirmed":
+			return
+
+		doc_before_save = self.get_doc_before_save()
+		if not doc_before_save:
+			return
+
+		old_start = get_datetime(doc_before_save.start_datetime)
+		old_end = get_datetime(doc_before_save.end_datetime)
+		new_start = get_datetime(self.start_datetime)
+		new_end = get_datetime(self.end_datetime)
+
+		if old_start != new_start or old_end != new_end:
+			self._enqueue_email_notification(
+				event_type="rescheduled",
+				previous_start_datetime=old_start,
+				previous_end_datetime=old_end,
+			)
 
 	def on_cancel(self) -> None:
 		"""
@@ -105,20 +148,23 @@ class Appointment(Document):
 		Ejecuta:
 		1. Opcionalmente eliminar meeting del proveedor
 		2. Marcar status como Cancelled
+		3. Encolar email de cancelación
 		"""
 		self._handle_meeting_deletion()
 		self.status = "Cancelled"
 		self.db_set("status", "Cancelled", update_modified=False)
+		self._enqueue_email_notification(event_type="cancelled")
 
 	def on_update(self) -> None:
 		"""
-		Detecta cambios de horario y re-crea meetings automáticos.
+		Detecta cambios de horario y:
+		- Re-crea meetings automáticos
+		- Encola email de reagendamiento si cambia start/end_datetime
 
-		Según Decisión 3:
-		- Si es auto: re-crear meeting con nuevo horario
-		- Si es manual: mantener meeting_url existente
+		Solo para citas Confirmed (no Draft).
 		"""
 		self._handle_meeting_update_on_time_change()
+		self._notify_on_time_change()
 
 	# ===== VALIDATION METHODS =====
 

@@ -206,6 +206,65 @@
             </table>
             {% endif %}
 
+            <!-- Logbook Entry section -->
+            {% if logbook_entry_name %}
+            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:24px;">
+              <tr>
+                <td style="background:#ecfeff; border-radius:6px; border:1px solid #a5f3fc; padding:16px 20px;">
+
+                  <p style="margin:0 0 12px 0; font-family:Arial,sans-serif; font-size:13px; font-weight:700; color:#155e75; text-transform:uppercase; letter-spacing:1px;">
+                    &#128203;&nbsp; Bitácora Creada Automáticamente
+                  </p>
+
+                  <table width="100%" cellpadding="0" cellspacing="0">
+                    <tr>
+                      <td style="padding:5px 0; width:45%;">
+                        <span style="font-family:Arial,sans-serif; font-size:12px; color:#0e7490; font-weight:600;">Número de bitácora</span>
+                      </td>
+                      <td style="padding:5px 0;">
+                        <span style="font-family:Arial,sans-serif; font-size:13px; color:#1c1917; font-weight:700;">{{ logbook_entry_name }}</span>
+                      </td>
+                    </tr>
+                    {% if logbook_entry_title %}
+                    <tr>
+                      <td style="padding:5px 0;">
+                        <span style="font-family:Arial,sans-serif; font-size:12px; color:#0e7490; font-weight:600;">Título</span>
+                      </td>
+                      <td style="padding:5px 0;">
+                        <span style="font-family:Arial,sans-serif; font-size:13px; color:#1c1917;">{{ logbook_entry_title }}</span>
+                      </td>
+                    </tr>
+                    {% endif %}
+                    {% if logbook_entry_assigned_to_name %}
+                    <tr>
+                      <td style="padding:5px 0;">
+                        <span style="font-family:Arial,sans-serif; font-size:12px; color:#0e7490; font-weight:600;">Responsable asignado</span>
+                      </td>
+                      <td style="padding:5px 0;">
+                        <span style="font-family:Arial,sans-serif; font-size:13px; color:#1c1917; font-weight:600;">{{ logbook_entry_assigned_to_name }}</span>
+                      </td>
+                    </tr>
+                    {% endif %}
+                  </table>
+
+                  {% if logbook_entry_url %}
+                  <table width="100%" cellpadding="0" cellspacing="0" style="margin-top:14px;">
+                    <tr>
+                      <td>
+                        <a href="{{ logbook_entry_url }}" target="_blank"
+                           style="display:inline-block; background:#0891b2; color:#ffffff; font-family:Arial,sans-serif; font-size:13px; font-weight:600; text-decoration:none; padding:8px 20px; border-radius:5px;">
+                          Abrir Bitácora &rarr;
+                        </a>
+                      </td>
+                    </tr>
+                  </table>
+                  {% endif %}
+
+                </td>
+              </tr>
+            </table>
+            {% endif %}
+
             <!-- Action buttons -->
             <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:8px;">
               <tr>

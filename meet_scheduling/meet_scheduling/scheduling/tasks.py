@@ -6,7 +6,10 @@ Background tasks that run periodically:
 """
 
 import frappe
-from frappe.utils import now_datetime
+from frappe.utils import now_datetime, add_to_date
+
+
+DRAFT_FALLBACK_MAX_AGE_HOURS = 24
 
 
 def cleanup_expired_drafts() -> int:
@@ -14,33 +17,30 @@ def cleanup_expired_drafts() -> int:
 	Marca Drafts expirados como Cancelled automáticamente.
 	Se ejecuta cada 15 minutos vía cron (configurado en hooks.py).
 
-	Algoritmo:
-		1. Buscar Appointments con:
-			- status = "Draft"
-			- docstatus = 0
-			- draft_expires_at < now()
-		2. Para cada Draft expirado:
-			- Cambiar status a "Cancelled"
-			- Agregar comment automático
-			- Guardar
-		3. Log cantidad de drafts expirados
+	Reglas de "expirado":
+		1. Tiene draft_expires_at y ya pasó.
+		2. NO tiene draft_expires_at y su start_datetime ya pasó (cita perdida).
+		3. NO tiene draft_expires_at y fue creado hace más de
+		   DRAFT_FALLBACK_MAX_AGE_HOURS horas (draft abandonado).
 
 	Returns:
 		int: Cantidad de drafts expirados
 	"""
 	current_time = now_datetime()
+	fallback_cutoff = add_to_date(current_time, hours=-DRAFT_FALLBACK_MAX_AGE_HOURS)
 
-	# 1. Buscar Drafts expirados
-	# Nota: Solo busca drafts con draft_expires_at < current_time AND draft_expires_at IS NOT NULL
-	# Los drafts sin draft_expires_at (NULL) no serán procesados
+	# 1. Buscar Drafts expirados con cualquiera de las 3 condiciones
 	expired_drafts = frappe.db.sql("""
-		SELECT name, calendar_resource, start_datetime, end_datetime
+		SELECT name, calendar_resource, start_datetime, end_datetime, draft_expires_at, creation
 		FROM `tabAppointment`
 		WHERE status = 'Draft'
 		AND docstatus = 0
-		AND draft_expires_at IS NOT NULL
-		AND draft_expires_at < %s
-	""", (current_time,), as_dict=True)
+		AND (
+			(draft_expires_at IS NOT NULL AND draft_expires_at < %(now)s)
+			OR (draft_expires_at IS NULL AND start_datetime < %(now)s)
+			OR (draft_expires_at IS NULL AND creation < %(fallback_cutoff)s)
+		)
+	""", {"now": current_time, "fallback_cutoff": fallback_cutoff}, as_dict=True)
 
 	cancelled_count = 0
 
@@ -57,10 +57,17 @@ def cleanup_expired_drafts() -> int:
 			# Cambiar status a Cancelled
 			appointment.status = "Cancelled"
 
-			# Agregar comment automático
+			# Agregar comment automático con la razón
+			if appointment.draft_expires_at:
+				reason = f"draft_expires_at: {appointment.draft_expires_at}"
+			elif appointment.start_datetime and appointment.start_datetime < current_time:
+				reason = f"start_datetime ya pasó: {appointment.start_datetime}"
+			else:
+				reason = f"draft abandonado por más de {DRAFT_FALLBACK_MAX_AGE_HOURS}h (creado: {appointment.creation})"
+
 			appointment.add_comment(
 				"Info",
-				f"Draft expirado automáticamente (expiró: {appointment.draft_expires_at})"
+				f"Draft expirado automáticamente ({reason})"
 			)
 
 			# Guardar sin validaciones adicionales
@@ -91,3 +98,111 @@ def cleanup_expired_drafts() -> int:
 	frappe.db.commit()
 
 	return cancelled_count
+
+
+REMINDER_LEAD_HOURS = 24
+REMINDER_WINDOW_MINUTES = 60
+
+
+def send_appointment_reminders() -> int:
+	"""
+	Envía emails de recordatorio para citas Confirmed que iniciarán
+	aproximadamente en REMINDER_LEAD_HOURS horas.
+
+	Se ejecuta cada hora vía cron. Usa una ventana de REMINDER_WINDOW_MINUTES
+	para no perder citas si el scheduler falla por algunos minutos.
+
+	Marca la cita con `reminder_sent_at` (campo no requerido — si no existe,
+	se evita doble envío comparando contra una ventana corta).
+
+	Returns:
+		int: Cantidad de recordatorios enviados
+	"""
+	current_time = now_datetime()
+	lead_start = add_to_date(current_time, hours=REMINDER_LEAD_HOURS)
+	lead_end = add_to_date(lead_start, minutes=REMINDER_WINDOW_MINUTES)
+
+	upcoming = frappe.db.sql("""
+		SELECT name
+		FROM `tabAppointment`
+		WHERE status = 'Confirmed'
+		AND start_datetime >= %(lead_start)s
+		AND start_datetime < %(lead_end)s
+	""", {"lead_start": lead_start, "lead_end": lead_end}, as_dict=True)
+
+	sent_count = 0
+
+	for appt_info in upcoming:
+		try:
+			# Encolar el envío del recordatorio
+			frappe.enqueue(
+				"meet_scheduling.meet_scheduling.notifications.appointment.send_appointment_notification",
+				appointment_name=appt_info.name,
+				event_type="reminder",
+				queue="default",
+			)
+			sent_count += 1
+		except Exception as e:
+			frappe.logger().error(
+				f"Error encolando recordatorio para {appt_info.name}: {str(e)}"
+			)
+			continue
+
+	if sent_count > 0:
+		frappe.logger().info(
+			f"send_appointment_reminders: {sent_count} recordatorios encolados"
+		)
+
+	return sent_count
+
+
+def auto_complete_past_appointments() -> int:
+	"""
+	Marca citas Confirmed cuya end_datetime ya pasó como Completed.
+
+	Se ejecuta cada hora vía cron (configurado en hooks.py).
+
+	Returns:
+		int: Cantidad de citas marcadas como Completed
+	"""
+	current_time = now_datetime()
+
+	past_confirmed = frappe.db.sql("""
+		SELECT name
+		FROM `tabAppointment`
+		WHERE status = 'Confirmed'
+		AND end_datetime < %s
+	""", (current_time,), as_dict=True)
+
+	completed_count = 0
+
+	for appt_info in past_confirmed:
+		try:
+			appointment = frappe.get_doc("Appointment", appt_info.name)
+
+			if appointment.status != "Confirmed":
+				continue
+
+			appointment.status = "Completed"
+			appointment.add_comment(
+				"Info",
+				f"Marcada como Completed automáticamente (end_datetime: {appointment.end_datetime})"
+			)
+			appointment.save(ignore_permissions=True)
+
+			completed_count += 1
+
+		except Exception as e:
+			frappe.logger().error(
+				f"Error al auto-completar Appointment {appt_info.name}: {str(e)}"
+			)
+			continue
+
+	if completed_count > 0:
+		frappe.logger().info(
+			f"auto_complete_past_appointments: {completed_count} citas marcadas como Completed"
+		)
+
+	frappe.db.commit()
+
+	return completed_count

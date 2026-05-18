@@ -1,7 +1,7 @@
 app_name = "meet_scheduling"
 app_title = "Meet Scheduling"
 app_publisher = "Sebastian Ortiz Valencia"
-app_description = "Aplicacion para configurar disopniblidad y agendamiento de citas"
+app_description = "Aplicación para configurar disponibilidad y agendamiento de citas"
 app_email = "sebastianortiz989@gmail.com"
 app_license = "mit"
 
@@ -187,7 +187,11 @@ scheduler_events = {
 		"*/15 * * * *": [  # Cada 15 minutos
 			"meet_scheduling.meet_scheduling.scheduling.tasks.cleanup_expired_drafts"
 		]
-	}
+	},
+	"hourly": [
+		"meet_scheduling.meet_scheduling.scheduling.tasks.auto_complete_past_appointments",
+		"meet_scheduling.meet_scheduling.scheduling.tasks.send_appointment_reminders"
+	]
 }
 
 # Otros scheduled tasks (comentados por ahora)
